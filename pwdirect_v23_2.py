@@ -346,7 +346,7 @@ def IRF(train_ids, pairs, X_train, X_test):
     ntrees = 200 * len(train_ids)
     trees = []
     while len(trees) < ntrees:
-        tree_model = DecisionTreeRegressor(n_jobs = -1)
+        tree_model = DecisionTreeRegressor()
 
         trpair_ids = indep_subdataset(train_ids)
         subtr_pairs = np.array(list(map(pairs.get, trpair_ids)))
