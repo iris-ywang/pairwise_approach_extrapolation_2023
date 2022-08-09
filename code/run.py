@@ -24,6 +24,6 @@ for file in filename_list:
     data = load_and_check_data(file)
     if data is None:
         continue
-    x_meta_train, y_meta_train = run_base_models(data)
-    metrics = run_stacking(x_meta_train, y_meta_train)
+    meta_data = run_base_models(data)
+    metrics = run_stacking(data, meta_data)
     all_metrics.append(metrics)
