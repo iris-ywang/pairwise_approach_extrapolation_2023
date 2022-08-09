@@ -4,6 +4,7 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, n
 
 from perform_base_case import generate_meta_data
 from scipy.stats import spearmanr, kendalltau
+from scipy.optimize import minimize
 
 
 class constrained_linear_regression():
@@ -39,16 +40,23 @@ class constrained_linear_regression():
         return np.matmul(Xtest, self.coef_)
 
 
-def run_stacking(x_meta_train, y_meta_train):
-    ms = constrained_linear_regression()
-    meta_model = ms.fit(x_meta_train, y_meta_train)
 
-    # generate x_meta_test
-    predictions_base = generate_meta_data(data)
-    x_meta_test = np.array(predictions_base).T
-    y_meta_test = data['test_set'][:, 0]
-    y_prediction_meta = meta_model.predict(x_meta_test)
-    return meta_evaluation(predictions_base, y_prediction_meta, y_meta_test)
+def run_stacking(data, meta_data):
+    
+    metrics = []
+    for outer_fold, meta_datum in meta_data.items():
+        x_meta_train, y_meta_train = meta_datum
+        ms = constrained_linear_regression()
+        meta_model = ms.fit(x_meta_train, y_meta_train)
+    
+        # generate x_meta_test
+        predictions_base = generate_meta_data(data[outer_fold])
+        x_meta_test = np.array(predictions_base)
+        y_meta_test = data[outer_fold]['test_set'][:, 0]
+        y_prediction_meta = meta_model.predict(x_meta_test)
+        metrics_per_fold = meta_evaluation(predictions_base, y_prediction_meta, y_meta_test)
+        metrics.append(metrics_per_fold)
+    return np.array(metrics)
 
 
 def metrics_evaluation(y_true, y_predict):
@@ -63,9 +71,10 @@ def metrics_evaluation(y_true, y_predict):
 
 
 def meta_evaluation(predictions_base, prediction_meta, y_true):
-    metrics = np.empty((len(predictions_base + 1), 6))
+    n_test, n_base= np.shape(predictions_base)
+    metrics = np.empty((n_base + 1, 6))
     metrics[0, :] = metrics_evaluation(y_true, prediction_meta)
 
-    for i in predictions_base:
-        metrics[i + 1, :] = metrics_evaluation(y_true, predictions_base[i])
+    for i in range(n_base):
+        metrics[i + 1, :] = metrics_evaluation(y_true, predictions_base[:,i])
     return metrics
