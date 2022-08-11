@@ -30,11 +30,7 @@ for file in filename_list:
     data = load_and_check_data(file)
     if data is None:
         continue
-<<<<<<< Updated upstream
-    meta_data = run_base_models(data)
-    metrics = run_stacking(data, meta_data)
-=======
+
     meta_data = run_base_models(data)  # a dict: key = fold number, values = (x_meta, y_meta)
     metrics = run_stacking(data, meta_data)  # np array: shape = (number_of_fold, number_of_base+1, number_of_metric)
->>>>>>> Stashed changes
     all_metrics.append(metrics)
