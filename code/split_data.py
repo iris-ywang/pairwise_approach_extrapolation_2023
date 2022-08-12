@@ -1,4 +1,3 @@
-
 from pa_basics.all_pairs import paired_data
 from pa_basics.import_chembl_data import dataset
 import numpy as np
@@ -7,6 +6,12 @@ from itertools import permutations, product
 
 
 def data_check(train_test):
+    """
+    Check if a dataset has too many repeated activities values. For 5 fold CV, a repeat rate of 15% is used.
+    For time-saving experiments, small datasets are used. The range of size of datasets is specified here.
+    :param train_test: np.ndarray of filtered dataset
+    :return: bool (True means the dataset is OK for experiment, and vice versa)
+    """
     sample_size = np.shape(train_test)[0]
     if sample_size > 100 or sample_size < 90: return False
 
@@ -17,32 +22,38 @@ def data_check(train_test):
     return True
 
 
-def train_test_ids(train_test, cv, fold):
-    sample_size = np.shape(train_test)[0]
-    ntest = int(sample_size / fold)
-    train_ids = list(range(sample_size))
-    if cv == fold - 1:
-        start = sample_size - (sample_size - ntest * cv)
-        test_ids = list(range(start, sample_size))
-        del train_ids[start: sample_size]
-    else:
-        test_ids = list(range(cv * ntest, (cv + 1) * ntest))
-        del train_ids[(cv * ntest): ((cv + 1) * ntest)]
-    return train_ids, test_ids
+def pair_test_with_train(train_ids, test_ids):
+    """
+    Generate C2-type pairs (test samples pairing with train samples)
+    :param train_ids: list of int for training sample IDs
+    :param test_ids: list of int for test sample IDs
+    :return: list of tuples of sample IDs
+    """
+    c2test_combs = []
+    for comb in product(test_ids, train_ids):
+        c2test_combs.append(comb)
+        c2test_combs.append(comb[::-1])
+    return c2test_combs
 
 
 def train_test_split(pairs, train_ids, test_ids):
-    def pair_test_w_train(train_ids, test_ids):
-        c2test_combs = []
-        for comb in product(test_ids, train_ids):
-            c2test_combs.append(comb)
-            c2test_combs.append(comb[::-1])
-        return c2test_combs
+    """
+    Generate different types of pairs depending on the given sample IDs for training samples and test samples
+    Types of pairing:
+        C1-type: train ID - train ID
+        C2-type: train ID - test ID
+        C3-type: test ID - test ID
 
+    :param pairs: dict of all possible pairs for a filtered dataset
+    :param train_ids: list of int for training sample IDs
+    :param test_ids: list of int for test sample IDs
+    :return: a dict of different types of pairs. It contains the info for samples IDs for pairs, and feature and target
+             values for them.
+    """
     train_pairs = dict(pairs)
     c2_test_pairs = []
     c3_test_pairs = []
-    c2_keys_del = pair_test_w_train(train_ids, test_ids)
+    c2_keys_del = pair_test_with_train(train_ids, test_ids)
     c3_keys_del = list(permutations(test_ids, 2)) + [(a, a) for a in test_ids]
 
     for key in c2_keys_del:
@@ -67,6 +78,13 @@ def train_test_split(pairs, train_ids, test_ids):
 
 
 def generate_train_test_sets(train_test):
+    """
+    Generate training sets and test sets for standard approach(regression on FP and activities) and for pairwise approach
+     (regression on pairwise features and differences in activities) for each fold of cross validation
+    :param train_test: np.array of filtered dataset
+    :return: a dict, keys =  fold number, values = the corresponding pre-processed training and test data and
+             sample information
+    """
     fold = 5
     y_true = np.array(train_test[:, 0])
     pairs = paired_data(train_test)
@@ -76,25 +94,26 @@ def generate_train_test_sets(train_test):
     n_fold = 0
     for train_ids, test_ids in kf.split(train_test):
         train_test_data_per_fold = {}
-        train_test_data_per_fold['train_ids'] = train_ids
-        train_test_data_per_fold['test_ids'] = test_ids
+        train_test_data_per_fold['train_ids'] = train_ids  # index of samples in training set
+        train_test_data_per_fold['test_ids'] = test_ids  # index of samples in test set
 
-        train_test_data_per_fold['train_set'] = train_test[train_ids]
-        train_test_data_per_fold['test_set'] = train_test[test_ids]
-        train_test_data_per_fold['y_true'] = y_true
+        train_test_data_per_fold['train_set'] = train_test[train_ids]  # y and x for training samples
+        train_test_data_per_fold['test_set'] = train_test[test_ids]  # y and x for test samples
+        train_test_data_per_fold['y_true'] = y_true  # true activity values for all samples
 
+        # a dict of different types of pairs and their samples IDs
         pairs_data = train_test_split(pairs, train_ids, test_ids)
         train_test_data[n_fold] = {**train_test_data_per_fold, **pairs_data}
-        
+
         n_fold += 1
 
     return train_test_data
 
 
 def load_and_check_data(filename):
-    train_test = dataset(filename)
-    if data_check(train_test):
-        data = generate_train_test_sets(train_test)
+    train_test = dataset(filename)  # load datasets from the file_path; filter it;
+    if data_check(train_test):  # check if the criteria is satisfied
+        data = generate_train_test_sets(train_test)  # if so, generate (pairwise) training and test samples
         return data
     else:
         return None
