@@ -9,7 +9,7 @@ def data_check(train_test):
     """
     Check if a dataset has too many repeated activities values. For 5 fold CV, a repeat rate of 15% is used.
     For time-saving experiments, small datasets are used. The range of size of datasets is specified here.
-    :param train_test: np.ndarray of filtered dataset
+    :param train_test: np.ndarray of filtered dataset - [y, x1, x2, ..., xn]
     :return: bool (True means the dataset is OK for experiment, and vice versa)
     """
     sample_size = np.shape(train_test)[0]
@@ -81,7 +81,7 @@ def generate_train_test_sets(train_test):
     """
     Generate training sets and test sets for standard approach(regression on FP and activities) and for pairwise approach
      (regression on pairwise features and differences in activities) for each fold of cross validation
-    :param train_test: np.array of filtered dataset
+    :param train_test: np.array of filtered dataset - [y, x1, x2, ..., xn]
     :return: a dict, keys =  fold number, values = the corresponding pre-processed training and test data and
              sample information
     """
