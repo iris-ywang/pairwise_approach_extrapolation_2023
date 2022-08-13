@@ -1,16 +1,15 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Tue Jun 14 16:08:40 2022
-
-self.author: dangoo
+Please ref the use and method description here:
+https://github.com/saulabs/trueskill/blob/master/lib/saulabs/trueskill/score_based_bayesian_rating.rb;
+and this paper:
+https://www.researchgate.net/publication/260639614_Score-Based_Bayesian_Skill_Learning
 """
 
 from ScoreBasedTrueSkill.rating import Rating
 
 class ScoreBasedBayesianRating:
     def __init__(self, score_teams_keys, score_teams_values, beta = 25/6, options = {}):
-        self.teams  = score_teams_keys
+        self.teams = score_teams_keys
         self.scores = score_teams_values
         if not len(self.teams) == 2:
             raise "teams.size should be 2: this implementation of the score based bayesian rating only works for two teams" 

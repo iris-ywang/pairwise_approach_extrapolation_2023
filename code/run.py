@@ -1,7 +1,8 @@
+import os
+
 from split_data import load_and_check_data
 from perform_base_case import run_base_models
 from perform_stacking import run_stacking
-import os
 
 
 def load_datasets():

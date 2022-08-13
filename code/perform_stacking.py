@@ -1,13 +1,16 @@
 import numpy as np
-from scipy.optimize import minimize
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score
-
-from perform_base_case import generate_meta_data
 from scipy.stats import spearmanr, kendalltau
 from scipy.optimize import minimize
 
+from perform_base_case import generate_meta_data
+
 
 class constrained_linear_regression():
+    """
+    Create a linear regression model whose coefficients are positive and their sum equals to 1. The class is formulated to work in a similar
+    way with scikit-learn LinearRegressor.
+    """
 
     def __init__(self, positive=True, sum_one=True, coef=None):
         self.bnds = positive
@@ -40,7 +43,46 @@ class constrained_linear_regression():
         return np.matmul(Xtest, self.coef_)
 
 
+def metrics_evaluation(y_true, y_predict):
+    rho = spearmanr(y_true, y_predict, nan_policy="omit")[0]
+    ndcg = ndcg_score([y_true], [y_predict])
+    mse = mean_squared_error(y_true, y_predict)
+    mae = mean_absolute_error(y_true, y_predict)
+    tau = kendalltau(y_true, y_predict)[0]
+    r2 = r2_score(y_true, y_predict)
+    return mse, mae, r2, rho, ndcg, tau
+
+
+def meta_evaluation(predictions_base, prediction_meta, y_true_test):
+    """
+    Evaluate the model accuracy for both base-models and meta-model.
+
+    :param predictions_base: np.array - shape = (number_test_samples, number_base_models)
+    :param prediction_meta: np.array - shape = (number_test_samples,)
+    :param y_true_test: np.array of true activity values of test samples
+    :return: np.array, shape = (number_base_model + 1, number_metric)
+    """
+    n_test, n_base = np.shape(predictions_base)
+    metrics = np.empty((n_base + 1, 6))
+    metrics[0, :] = metrics_evaluation(y_true_test, prediction_meta)
+
+    for i in range(n_base):
+        metrics[i + 1, :] = metrics_evaluation(y_true_test, predictions_base[:, i])
+    return metrics
+
+
+
 def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
+    """
+    For each fold:
+    Take the base-model predictions from trainings samples and their true values, build the meta model;
+    Then re-build the base-models using all of the training samples, predict for test samples, which are then input
+    to the meta-model to get a final predictions for test samples.
+    :param data: a dict - keys = (outer) fold number, values = the corresponding pre-processed training and test data and
+             sample information
+    :param meta_data: a dict - keys = (outer) fold number, values = a tuple of features and target values for meta-model
+    :return: np.array of metrics, shape = (number_fold, number_of_base+1, number_of_metric)
+    """
     metrics = []
     for outer_fold, meta_datum in meta_data.items():
         x_meta_train, y_meta_train = meta_datum
@@ -56,23 +98,3 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
         metrics.append(metrics_per_fold)
     return np.array(metrics)
 
-
-def metrics_evaluation(y_true, y_predict):
-    rho = spearmanr(y_true, y_predict, nan_policy="omit")[0]
-    ndcg = ndcg_score([y_true], [y_predict])
-    mse = mean_squared_error(y_true, y_predict)
-    mae = mean_absolute_error(y_true, y_predict)
-    tau = kendalltau(y_true, y_predict)[0]
-    r2 = r2_score(y_true, y_predict)
-    # print(rho, ndcg, tau, mse)
-    return (mse, mae, r2, rho, ndcg, tau)
-
-
-def meta_evaluation(predictions_base, prediction_meta, y_true):
-    n_test, n_base = np.shape(predictions_base)
-    metrics = np.empty((n_base + 1, 6))
-    metrics[0, :] = metrics_evaluation(y_true, prediction_meta)
-
-    for i in range(n_base):
-        metrics[i + 1, :] = metrics_evaluation(y_true, predictions_base[:, i])
-    return metrics

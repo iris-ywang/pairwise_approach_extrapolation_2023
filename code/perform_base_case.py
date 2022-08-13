@@ -1,10 +1,9 @@
-from split_data import generate_train_test_sets
-from ScoreBasedTrueSkill.score_based_bayesian_rating import ScoreBasedBayesianRating as SBBR
-from ScoreBasedTrueSkill.rating import Rating as sbbr_rating
-
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 
+from split_data import generate_train_test_sets
+from ScoreBasedTrueSkill.score_based_bayesian_rating import ScoreBasedBayesianRating as SBBR
+from ScoreBasedTrueSkill.rating import Rating as sbbr_rating
 
 def regression(model, train_data, test_data=None):
     x_train = train_data[:, 1:]
@@ -19,11 +18,11 @@ def regression(model, train_data, test_data=None):
         return fitted_model
 
 
-def rating_sbbr(Y, pair_ids, y_true, train_ids):
+def rating_sbbr(Y_pa, pair_ids, y_true, train_ids):
     """
     Estimate activity values from C2-type test pairs via ScoreBasedBayesRating method
 
-    :param Y: np.array of (predicted) differences in activities for test pairs
+    :param Y_pa: np.array of (predicted) differences in activities for test pairs
     :param pair_ids: list of tuples, each specifying samples IDs for a pair.
             * Y and pair_ids should match; their length should be the same
     :param y_true: np.array of true activity values of all samples
@@ -31,7 +30,7 @@ def rating_sbbr(Y, pair_ids, y_true, train_ids):
     :return: np.array of estimated activity values for all samples (both train and test samples)
     """
     n_samples = len(y_true)
-    n_comparisons = len(Y)
+    n_comparisons = len(Y_pa)
     mean_train = np.mean(y_true[train_ids])
     dev_train = mean_train / 3
     beta = mean_train / 6
@@ -41,7 +40,7 @@ def rating_sbbr(Y, pair_ids, y_true, train_ids):
     # updating each sample's rating score based on their (predicted) pairwise comparison
     for pair_id in range(n_comparisons):
         id_a, id_b = pair_ids[pair_id]
-        comp_result = Y[pair_id]
+        comp_result = Y_pa[pair_id]
         SBBR([ranking[id_a], ranking[id_b]], [comp_result, 0]).update_skills()
 
     return np.array([rating_score[0].mean for rating_score in ranking])

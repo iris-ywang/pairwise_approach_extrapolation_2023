@@ -1,8 +1,9 @@
-from pa_basics.all_pairs import paired_data
-from pa_basics.import_chembl_data import dataset
 import numpy as np
 from sklearn.model_selection import KFold
 from itertools import permutations, product
+
+from pa_basics.all_pairs import paired_data
+from pa_basics.import_chembl_data import dataset
 
 
 def data_check(train_test):
