@@ -91,16 +91,11 @@ def generate_train_test_sets(train_test):
     pairs = paired_data(train_test)
 
     train_test_data = {}
-    kf = KFold(n_splits=fold)
+    kf = KFold(n_splits=fold, random_state=0)
     n_fold = 0
     for train_ids, test_ids in kf.split(train_test):
-        train_test_data_per_fold = {}
-        train_test_data_per_fold['train_ids'] = train_ids  # index of samples in training set
-        train_test_data_per_fold['test_ids'] = test_ids  # index of samples in test set
-
-        train_test_data_per_fold['train_set'] = train_test[train_ids]  # y and x for training samples
-        train_test_data_per_fold['test_set'] = train_test[test_ids]  # y and x for test samples
-        train_test_data_per_fold['y_true'] = y_true  # true activity values for all samples
+        train_test_data_per_fold = {'train_ids': train_ids, 'test_ids': test_ids, 'train_set': train_test[train_ids],
+                                    'test_set': train_test[test_ids], 'y_true': y_true}
 
         # a dict of different types of pairs and their samples IDs
         pairs_data = train_test_split(pairs, train_ids, test_ids)
@@ -111,8 +106,8 @@ def generate_train_test_sets(train_test):
     return train_test_data
 
 
-def load_and_check_data(filename):
-    train_test = dataset(filename)  # load datasets from the file_path; filter it;
+def load_and_check_data(filename, shuffle_state=None):
+    train_test = dataset(filename, shuffle_state)  # load datasets from the file_path; filter it;
     if data_check(train_test):  # check if the criteria is satisfied
         data = generate_train_test_sets(train_test)  # if so, generate (pairwise) training and test samples
         return data

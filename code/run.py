@@ -12,7 +12,7 @@ def load_datasets():
     list of strings
     """
     filename_lst = []
-    # TODO: may need to change the way of getting parent directory if this duoes not work on windows
+    # TODO: may need to change the way of getting parent directory if this does not work on windows
     directory = os.getcwd() + '/input/qsar_data_unsorted'
 
     for root, dirs, files in os.walk(directory):
@@ -28,7 +28,7 @@ filename_list = load_datasets()
 all_metrics = []
 for file in filename_list:
     # If dataset passes the criteria, then it gives a dict of fold number and their corresponding pre-processed data
-    data = load_and_check_data(file)
+    data = load_and_check_data(file, shuffle_state=None)  # No shuffling of dataset
     if data is None:
         continue
 

@@ -5,6 +5,7 @@ from split_data import generate_train_test_sets
 from ScoreBasedTrueSkill.score_based_bayesian_rating import ScoreBasedBayesianRating as SBBR
 from ScoreBasedTrueSkill.rating import Rating as sbbr_rating
 
+
 def regression(model, train_data, test_data=None):
     x_train = train_data[:, 1:]
     y_train = train_data[:, 0]
