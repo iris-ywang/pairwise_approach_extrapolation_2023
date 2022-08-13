@@ -115,12 +115,12 @@ def generate_meta_data(all_data):
     :return: np.array - shape = (number_test_samples, number_base_models)
     """
     # regression on FP
-    _, y_SA = regression(RandomForestRegressor(), all_data['train_set'], all_data['test_set'])
+    _, y_SA = regression(RandomForestRegressor(random_state=1), all_data['train_set'], all_data['test_set'])
 
     # regression on pairs of FP for C2 and C3 type test pairs
-    _, Y_pa_c2 = regression(RandomForestRegressor(), all_data['train_pairs'], all_data['c2_test_pairs'])
+    _, Y_pa_c2 = regression(RandomForestRegressor(random_state=1), all_data['train_pairs'], all_data['c2_test_pairs'])
 
-    _, Y_pa_c3 = regression(RandomForestRegressor(), all_data['train_pairs'], all_data['c3_test_pairs'])
+    _, Y_pa_c3 = regression(RandomForestRegressor(random_state=1), all_data['train_pairs'], all_data['c3_test_pairs'])
 
     # estimate activity values from C2-type test pairs via arithmetic mean
     y_EstimateFromYpa = estimate_y_from_averaging(Y_pa_c2, all_data['c2_test_pair_ids'], all_data['test_ids'],

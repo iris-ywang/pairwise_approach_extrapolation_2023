@@ -71,7 +71,6 @@ def meta_evaluation(predictions_base, prediction_meta, y_true_test):
     return metrics
 
 
-
 def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
     """
     For each fold:
