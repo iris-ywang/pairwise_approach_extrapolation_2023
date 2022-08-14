@@ -1,6 +1,6 @@
 """
 Test run with test_case.csv for debugging and testing the refectory
-Test dataset: 10 samples, 17 features
+Test dataset: 20 samples, 17 features
 """
 
 from split_data import generate_train_test_sets
