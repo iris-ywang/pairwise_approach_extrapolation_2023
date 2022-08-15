@@ -23,15 +23,15 @@ def load_datasets():
                 f.close()
     return filename_lst
 
+if __name__ == '__main__':
+    filename_list = load_datasets()
+    all_metrics = []
+    for file in filename_list:
+        # If dataset passes the criteria, then it gives a dict of fold number and their corresponding pre-processed data
+        data = load_and_check_data(file, shuffle_state=None)  # No shuffling of dataset
+        if data is None:
+            continue
 
-filename_list = load_datasets()
-all_metrics = []
-for file in filename_list:
-    # If dataset passes the criteria, then it gives a dict of fold number and their corresponding pre-processed data
-    data = load_and_check_data(file, shuffle_state=None)  # No shuffling of dataset
-    if data is None:
-        continue
-
-    meta_data = run_base_models(data)  # a dict: key = fold number, values = (x_meta, y_meta)
-    metrics = run_stacking(data, meta_data)  # np array: shape = (number_of_fold, number_of_base+1, number_of_metric)
-    all_metrics.append(metrics)
+        meta_data = run_base_models(data)  # a dict: key = fold number, values = (x_meta, y_meta)
+        metrics = run_stacking(data, meta_data)  # np array: shape = (number_of_fold, number_of_base+1, number_of_metric)
+        all_metrics.append(metrics)
