@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score
+from sklearn.ensemble import RandomForestRegressor
 from scipy.stats import spearmanr, kendalltau
 from scipy.optimize import minimize
 
@@ -85,7 +86,7 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
     metrics = []
     for outer_fold, meta_datum in meta_data.items():
         x_meta_train, y_meta_train = meta_datum
-        ms = constrained_linear_regression()
+        ms = RandomForestRegressor(random_state=1)
         meta_model = ms.fit(x_meta_train, y_meta_train)
 
         # generate x_meta_test

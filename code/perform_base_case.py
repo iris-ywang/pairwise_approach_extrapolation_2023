@@ -128,7 +128,12 @@ def generate_meta_data(all_data):
 
     # estimate activity values from C2-type test pairs via ScoreBasedBayesRating method
     y_RankFromYpa = estimate_y_from_ranking(Y_pa_c2, Y_pa_c3, all_data)
-    return np.array([y_SA, y_EstimateFromYpa, y_RankFromYpa]).T
+
+    x_meta = np.array([y_SA, y_EstimateFromYpa, y_RankFromYpa]).T
+
+    train_FP = all_data["test_set"][:, 1:]
+    x_meta_with_FP = np.concatenate((x_meta, train_FP), axis=1)
+    return x_meta_with_FP
 
 
 def run_base_models(data: dict):
