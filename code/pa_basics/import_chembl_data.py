@@ -51,6 +51,8 @@ def uniform_features(data):
 def duplicated_features(data):
     """
     Remove the duplicated features from the dataset
+    **Note: this function can change the sequences of features
+
     :param data: np.array - [y, x1, x2, ..., xn]
     :return: np.array - [y, x1, x2, ..., xn']
     """
