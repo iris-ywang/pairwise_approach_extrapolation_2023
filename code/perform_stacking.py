@@ -2,6 +2,8 @@ import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score
 from scipy.stats import spearmanr, kendalltau
 from scipy.optimize import minimize
+from sklearn.ensemble import RandomForestClassifier
+
 
 from perform_base_case import generate_meta_data
 
@@ -71,29 +73,79 @@ def meta_evaluation(predictions_base, prediction_meta, y_true_test):
     return metrics
 
 
+def transform_meta_class_forward(x_meta_train, y_meta_train):
+    """
+    base    p1        p2        actual        class
+
+0.5        0.6        0.7        0.4        1
+
+0.5        0.55      0.7        0.6        2
+
+0.5        0.45      0.6        0.4        3
+
+    Note: the first (0th) column(feature) of x_meta_train must be from the standard approach
+    :param x_meta_train:
+    :param y_meta_train:
+    :return:
+    """
+    y_meta_class = np.empty(np.shape(y_meta_train))
+    y_true = np.array([y_meta_train]).T
+    diff = x_meta_train - y_true
+    diff_abs = np.absolute(diff)
+    min_column_id = np.argmin(diff_abs, axis=1)  # find the predictions closest to y_true
+    best_values = x_meta_train[np.arange(len(x_meta_train)), min_column_id]
+    for sample in range(len(y_meta_class)):
+        if min_column_id[sample] == 0:
+            y_meta_class[sample] = 1
+            continue
+
+        if best_values[sample] > x_meta_train[sample, 0]:
+            y_meta_class[sample] = 2
+        elif best_values[sample] < x_meta_train[sample, 0]:
+            y_meta_class[sample] = 3
+    return y_meta_class
+
+
+def transform_meta_class_backward(x_meta_train, y_meta_class):
+    y_meta_value = np.empty(np.shape(y_meta_class))
+    for sample in range(len(y_meta_class)):
+        prediction_sa = x_meta_train[sample, 0]
+        if y_meta_class[sample] == 1:
+            y_meta_value[sample] = prediction_sa
+        elif y_meta_class[sample] == 2:
+            sample_predictions = x_meta_train[sample]
+            y_meta_value[sample] = sample_predictions[sample_predictions > prediction_sa].min()
+        elif y_meta_class[sample] == 3:
+            sample_predictions = x_meta_train[sample]
+            y_meta_value[sample] = sample_predictions[sample_predictions < prediction_sa].max()
+    return y_meta_value
+
+
 def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
     """
-    For each fold:
-    Take the base-model predictions from trainings samples and their true values, build the meta model;
-    Then re-build the base-models using all of the training samples, predict for test samples, which are then input
-    to the meta-model to get a final predictions for test samples.
-    :param data: a dict - keys = (outer) fold number, values = the corresponding pre-processed training and test data and
-             sample information
-    :param meta_data: a dict - keys = (outer) fold number, values = a tuple of features and target values for meta-model
-    :return: np.array of metrics, shape = (number_fold, number_of_base+1, number_of_metric)
+    # For each fold:
+    # Take the base-model predictions from trainings samples and their true values, build the meta model;
+    # Then re-build the base-models using all of the training samples, predict for test samples, which are then input
+    # to the meta-model to get a final predictions for test samples.
+    # :param data: a dict - keys = (outer) fold number, values = the corresponding pre-processed training and test data and
+    #          sample information
+    # :param meta_data: a dict - keys = (outer) fold number, values = a tuple of features and target values for meta-model
+    # :return: np.array of metrics, shape = (number_fold, number_of_base+1, number_of_metric)
     """
     metrics = []
     for outer_fold, meta_datum in meta_data.items():
         x_meta_train, y_meta_train = meta_datum
-        ms = constrained_linear_regression()
-        meta_model = ms.fit(x_meta_train, y_meta_train)
+        y_meta_class = transform_meta_class_forward(x_meta_train, y_meta_train)
+        ms = RandomForestClassifier()
+        meta_model = ms.fit(x_meta_train, y_meta_class)
 
         # generate x_meta_test
         predictions_base = generate_meta_data(data[outer_fold])
         x_meta_test = np.array(predictions_base)
         y_meta_test = data[outer_fold]['test_set'][:, 0]
-        y_prediction_meta = meta_model.predict(x_meta_test)
+        y_class_meta = meta_model.predict(x_meta_test)
+        y_prediction_meta = transform_meta_class_backward(x_meta_test, y_class_meta)
+
         metrics_per_fold = meta_evaluation(predictions_base, y_prediction_meta, y_meta_test)
         metrics.append(metrics_per_fold)
     return np.array(metrics)
-
