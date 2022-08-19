@@ -23,6 +23,7 @@ def load_datasets():
                 f.close()
     return filename_lst
 
+
 if __name__ == '__main__':
     filename_list = load_datasets()
     all_metrics = []
