@@ -4,7 +4,6 @@ from scipy.stats import spearmanr, kendalltau
 from scipy.optimize import minimize
 from sklearn.ensemble import RandomForestClassifier
 
-
 from perform_base_case import generate_meta_data
 
 
@@ -149,3 +148,13 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
         metrics_per_fold = meta_evaluation(predictions_base, y_prediction_meta, y_meta_test)
         metrics.append(metrics_per_fold)
     return np.array(metrics)
+
+
+"""
+Question:
+base    p1        p2        actual        class
+
+0.5        0.6        0.7        0.8        2
+
+But when it is converted back, it would choose 0.6 but not 0.7
+"""
