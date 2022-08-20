@@ -1,6 +1,7 @@
 import os
+import pandas as pd
 
-from split_data import load_and_check_data
+from pa_basics.import_chembl_data import dataset
 from perform_base_case import run_base_models
 from perform_stacking import run_stacking
 
@@ -25,13 +26,17 @@ def load_datasets():
 
 
 if __name__ == '__main__':
-    filename_list = load_datasets()
+    chembl_info = pd.read_csv("input//chembl_datasets_info.csv")
     all_metrics = []
-    for file in filename_list:
-        # If dataset passes the criteria, then it gives a dict of fold number and their corresponding pre-processed data
-        data = load_and_check_data(file, shuffle_state=None)  # No shuffling of dataset
-        if data is None:
-            continue
+    for file in range(len(chembl_info)):
+        if chembl_info["Repetition Rate"][file] > 0.15: continue
+        if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
+        # If dataset passes the above criteria, then it gives a dict of fold number and their corresponding
+        # pre-processed data
+
+        # TODO: may need to change the way of getting parent directory if this does not work on windows
+        connection = "/input/qsar_data_unsorted/"
+        data = dataset(os.getcwd() + connection + chembl_info["File name"][file])
 
         meta_data = run_base_models(data)  # a dict: key = fold number, values = (x_meta, y_meta)
         metrics = run_stacking(data, meta_data)  # np array: shape = (number_of_fold, number_of_base+1, number_of_metric)
