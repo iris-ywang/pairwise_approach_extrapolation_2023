@@ -113,10 +113,16 @@ def transform_meta_class_backward(x_meta_train, y_meta_class):
             y_meta_value[sample] = prediction_sa
         elif y_meta_class[sample] == 2:
             sample_predictions = x_meta_train[sample]
-            y_meta_value[sample] = sample_predictions[sample_predictions > prediction_sa].min()
+            try:
+                y_meta_value[sample] = sample_predictions[sample_predictions > prediction_sa].min()
+            except ValueError:
+                y_meta_value[sample] = prediction_sa
         elif y_meta_class[sample] == 3:
             sample_predictions = x_meta_train[sample]
-            y_meta_value[sample] = sample_predictions[sample_predictions < prediction_sa].max()
+            try:
+               y_meta_value[sample] = sample_predictions[sample_predictions < prediction_sa].max()
+            except ValueError:
+                y_meta_value[sample] = prediction_sa
     return y_meta_value
 
 
