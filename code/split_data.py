@@ -91,7 +91,7 @@ def generate_train_test_sets(train_test):
     pairs = paired_data(train_test)
 
     train_test_data = {}
-    kf = KFold(n_splits=fold, random_state=0)
+    kf = KFold(n_splits=fold)
     n_fold = 0
     for train_ids, test_ids in kf.split(train_test):
         train_test_data_per_fold = {'train_ids': train_ids, 'test_ids': test_ids, 'train_set': train_test[train_ids],
