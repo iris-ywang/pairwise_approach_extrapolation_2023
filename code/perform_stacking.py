@@ -135,7 +135,7 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
     for outer_fold, meta_datum in meta_data.items():
         x_meta_train, y_meta_train = meta_datum
         y_meta_class = transform_meta_class_forward(x_meta_train, y_meta_train)
-        ms = RandomForestClassifier()
+        ms = RandomForestClassifier(random_state=1, n_jobs=-1)
         meta_model = ms.fit(x_meta_train, y_meta_class)
 
         # generate x_meta_test
