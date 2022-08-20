@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 
 from pa_basics.import_chembl_data import dataset
 from perform_base_case import run_base_models
@@ -41,3 +42,4 @@ if __name__ == '__main__':
         meta_data = run_base_models(data)  # a dict: key = fold number, values = (x_meta, y_meta)
         metrics = run_stacking(data, meta_data)  # np array: shape = (number_of_fold, number_of_base+1, number_of_metric)
         all_metrics.append(metrics)
+        np.save('stack_classification_run1.npy', np.array(all_metrics))
