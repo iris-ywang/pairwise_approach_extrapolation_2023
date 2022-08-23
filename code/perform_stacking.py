@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score
 from scipy.stats import spearmanr, kendalltau
 from scipy.optimize import minimize
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
 from perform_base_case import generate_meta_data
 
@@ -141,7 +141,9 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
     for outer_fold, meta_datum in meta_data.items():
         x_meta_train, y_meta_train = meta_datum
         y_meta_class = transform_meta_class_forward(x_meta_train, y_meta_train)
-        ms = RandomForestClassifier(random_state=1, n_jobs=-1)
+        unique, counts = np.unique(y_meta_class, return_counts=True)
+        print(np.asarray((unique, counts)).T)
+        ms = LogisticRegression(n_jobs=-1)
         meta_model = ms.fit(x_meta_train, y_meta_class)
 
         # generate x_meta_test
