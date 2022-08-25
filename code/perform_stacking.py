@@ -54,16 +54,18 @@ def metrics_evaluation(y_true, y_predict):
     return mse, mae, r2, rho, ndcg, tau
 
 
-def meta_evaluation(predictions_base, prediction_meta, y_true_test):
+def meta_evaluation(predictions_base, prediction_meta, y_true_test, n_base=None):
     """
     Evaluate the model accuracy for both base-models and meta-model.
 
-    :param predictions_base: np.array - shape = (number_test_samples, number_base_models)
+    :param n_base: int, number of base models; if None, the number is extracted from the shape of the prediction_base
+    :param predictions_base: np.array - shape = (number_test_samples, number_base_models(_plus_FP))
     :param prediction_meta: np.array - shape = (number_test_samples,)
     :param y_true_test: np.array of true activity values of test samples
     :return: np.array, shape = (number_base_model + 1, number_metric)
     """
-    n_test, n_base = np.shape(predictions_base)
+    if n_base is None:
+        _, n_base = np.shape(predictions_base)
     metrics = np.empty((n_base + 1, 6))
     metrics[0, :] = metrics_evaluation(y_true_test, prediction_meta)
 
@@ -156,7 +158,7 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
         x_meta_train, y_meta_train = meta_datum
         y_meta_class = transform_meta_class_forward(x_meta_train, y_meta_train)
         unique, counts = np.unique(y_meta_class, return_counts=True)
-        print(np.asarray((unique, counts)).T)
+        print("meta input: ", np.asarray((unique, counts)).T)
         ms = RandomForestClassifier(n_jobs=-1)
         meta_model = ms.fit(x_meta_train, y_meta_class)
 
@@ -165,10 +167,11 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
         x_meta_test = np.array(predictions_base)
         y_meta_test = data[outer_fold]['test_set'][:, 0]
         y_class_meta = meta_model.predict(x_meta_test)
+        unique, counts = np.unique(y_class_meta, return_counts=True)
+        print("meta prediction: ", np.asarray((unique, counts)).T)
+
         y_prediction_meta = transform_meta_class_backward(x_meta_test, y_class_meta)
-        unique, counts = np.unique(y_prediction_meta, return_counts=True)
-        print(np.asarray((unique, counts)).T)
-        metrics_per_fold = meta_evaluation(predictions_base, y_prediction_meta, y_meta_test)
+        metrics_per_fold = meta_evaluation(predictions_base, y_prediction_meta, y_meta_test, 3)
         metrics.append(metrics_per_fold)
     return np.array(metrics)
 
