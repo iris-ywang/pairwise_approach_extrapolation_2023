@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score
 from scipy.stats import spearmanr, kendalltau
 from scipy.optimize import minimize
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 
 from perform_base_case import generate_meta_data
 
@@ -74,6 +74,12 @@ def meta_evaluation(predictions_base, prediction_meta, y_true_test):
 
 def transform_meta_class_forward(x_meta_train, y_meta_train):
     """
+    Assign meta-class according to the base model predictions. The assignment rules are:
+    CLass 1: choose best base model - base
+    Class 2: choose the one just above the base
+    Class 3: choose the one just below the base
+
+    Example:
     base    p1        p2        actual        class
 
 0.5        0.6        0.7        0.4        1
@@ -83,9 +89,10 @@ def transform_meta_class_forward(x_meta_train, y_meta_train):
 0.5        0.45      0.6        0.4        3
 
     Note: the first (0th) column(feature) of x_meta_train must be from the standard approach
-    :param x_meta_train:
-    :param y_meta_train:
-    :return:
+    :param x_meta_train: np.array of base predictions; shape = (number_train_samples, number_base_models); the first
+                         column is the best base model among all base models
+    :param y_meta_train: np.array of true values of training samples
+    :return: np.array of assigned classes for the training samples
     """
     y_meta_class = np.empty(np.shape(y_meta_train))
     y_true = np.array([y_meta_train]).T
@@ -106,6 +113,13 @@ def transform_meta_class_forward(x_meta_train, y_meta_train):
 
 
 def transform_meta_class_backward(x_meta_train, y_meta_class):
+    """
+    Following the rules in transform_meta_class_forward(), transform the meta-class back into target values.
+    :param x_meta_train: np.array of base predictions; shape = (number_train_samples, number_base_models); the first
+                         column is the best base model among all base models
+    :param y_meta_class: np.array of assigned classes for the training samples
+    :return: np.array of picked values for training samples
+    """
     y_meta_value = np.empty(np.shape(y_meta_class))
     for sample in range(len(y_meta_class)):
         prediction_sa = x_meta_train[sample, 0]
@@ -143,7 +157,7 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
         y_meta_class = transform_meta_class_forward(x_meta_train, y_meta_train)
         unique, counts = np.unique(y_meta_class, return_counts=True)
         print(np.asarray((unique, counts)).T)
-        ms = LogisticRegression(n_jobs=-1)
+        ms = RandomForestClassifier(n_jobs=-1)
         meta_model = ms.fit(x_meta_train, y_meta_class)
 
         # generate x_meta_test
@@ -152,7 +166,8 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
         y_meta_test = data[outer_fold]['test_set'][:, 0]
         y_class_meta = meta_model.predict(x_meta_test)
         y_prediction_meta = transform_meta_class_backward(x_meta_test, y_class_meta)
-
+        unique, counts = np.unique(y_prediction_meta, return_counts=True)
+        print(np.asarray((unique, counts)).T)
         metrics_per_fold = meta_evaluation(predictions_base, y_prediction_meta, y_meta_test)
         metrics.append(metrics_per_fold)
     return np.array(metrics)

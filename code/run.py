@@ -44,4 +44,4 @@ if __name__ == '__main__':
         meta_data = run_base_models(data)  # a dict: key = fold number, values = (x_meta, y_meta)
         metrics = run_stacking(data, meta_data)  # np array: shape = (number_of_fold, number_of_base+1, number_of_metric)
         all_metrics.append(metrics)
-        np.save('stack_classification_run2.npy', np.array(all_metrics))
+        np.save('stack_classification_run3.npy', np.array(all_metrics))
