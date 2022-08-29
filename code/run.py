@@ -31,10 +31,15 @@ if __name__ == '__main__':
     chembl_info = pd.read_csv("input//chembl_datasets_info.csv")
     all_metrics = []
     for file in range(len(chembl_info)):
+        if len(all_metrics) > 150: break
         if chembl_info["Repetition Rate"][file] > 0.15: continue
         if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
         # If dataset passes the above criteria, then it gives a dict of fold number and their corresponding
         # pre-processed data
+
+        f = open("meta_class_distr.txt", "w")
+        f.write(chembl_info["File name"][file])
+        f.close()
 
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         connection = "/input/qsar_data_unsorted/"
@@ -44,4 +49,4 @@ if __name__ == '__main__':
         meta_data = run_base_models(data)  # a dict: key = fold number, values = (x_meta, y_meta)
         metrics = run_stacking(data, meta_data)  # np array: shape = (number_of_fold, number_of_base+1, number_of_metric)
         all_metrics.append(metrics)
-        np.save('stack_classification_run3.npy', np.array(all_metrics))
+        np.save('stack_classification_re_run3.npy', np.array(all_metrics))

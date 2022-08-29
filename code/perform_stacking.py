@@ -91,7 +91,7 @@ def transform_meta_class_forward(x_meta_train, y_meta_train):
 0.5        0.45      0.6        0.4        3
 
     Note: the first (0th) column(feature) of x_meta_train must be from the standard approach
-    :param x_meta_train: np.array of base predictions; shape = (number_train_samples, number_base_models); the first
+    :param x_meta_train: np.array of base predictions, ONLY; shape = (number_train_samples, number_base_models); the first
                          column is the best base model among all base models
     :param y_meta_train: np.array of true values of training samples
     :return: np.array of assigned classes for the training samples
@@ -117,7 +117,7 @@ def transform_meta_class_forward(x_meta_train, y_meta_train):
 def transform_meta_class_backward(x_meta_train, y_meta_class):
     """
     Following the rules in transform_meta_class_forward(), transform the meta-class back into target values.
-    :param x_meta_train: np.array of base predictions; shape = (number_train_samples, number_base_models); the first
+    :param x_meta_train: np.array of base predictions, ONLY; shape = (number_train_samples, number_base_models); the first
                          column is the best base model among all base models
     :param y_meta_class: np.array of assigned classes for the training samples
     :return: np.array of picked values for training samples
@@ -156,10 +156,9 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
     metrics = []
     for outer_fold, meta_datum in meta_data.items():
         x_meta_train, y_meta_train = meta_datum
-        y_meta_class = transform_meta_class_forward(x_meta_train, y_meta_train)
-        unique, counts = np.unique(y_meta_class, return_counts=True)
-        print("meta input: ", np.asarray((unique, counts)).T)
-        ms = RandomForestClassifier(n_jobs=-1)
+        y_meta_class = transform_meta_class_forward(x_meta_train[:, :n_base], y_meta_train)
+        unique_input, counts_input = np.unique(y_meta_class, return_counts=True)
+        ms = RandomForestClassifier(n_jobs=-1, random_state=1)
         meta_model = ms.fit(x_meta_train, y_meta_class)
 
         # generate x_meta_test
@@ -167,12 +166,16 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
         x_meta_test = np.array(predictions_base)
         y_meta_test = data[outer_fold]['test_set'][:, 0]
         y_class_meta = meta_model.predict(x_meta_test)
-        unique, counts = np.unique(y_class_meta, return_counts=True)
-        print("meta prediction: ", np.asarray((unique, counts)).T)
+        unique_output, counts_output = np.unique(y_class_meta, return_counts=True)
 
-        y_prediction_meta = transform_meta_class_backward(x_meta_test, y_class_meta)
-        metrics_per_fold = meta_evaluation(predictions_base, y_prediction_meta, y_meta_test, 3)
+        n_base = 3
+        y_prediction_meta = transform_meta_class_backward(x_meta_test[:, :n_base], y_class_meta)
+        metrics_per_fold = meta_evaluation(predictions_base, y_prediction_meta, y_meta_test, n_base)
         metrics.append(metrics_per_fold)
+        f = open("meta_class_distr_re_run3.txt", "w")
+        f.write("meta input: " + str(np.asarray((unique_input, counts_input)).T) + "/n")
+        f.write("meta output: " + str(np.asarray((unique_output, counts_output)).T) + "/n")
+        f.close()
     return np.array(metrics)
 
 
