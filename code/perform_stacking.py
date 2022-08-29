@@ -154,6 +154,7 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
     # :return: np.array of metrics, shape = (number_fold, number_of_base+1, number_of_metric)
     """
     metrics = []
+    n_base = 3
     for outer_fold, meta_datum in meta_data.items():
         x_meta_train, y_meta_train = meta_datum
         y_meta_class = transform_meta_class_forward(x_meta_train[:, :n_base], y_meta_train)
@@ -168,13 +169,12 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
         y_class_meta = meta_model.predict(x_meta_test)
         unique_output, counts_output = np.unique(y_class_meta, return_counts=True)
 
-        n_base = 3
         y_prediction_meta = transform_meta_class_backward(x_meta_test[:, :n_base], y_class_meta)
         metrics_per_fold = meta_evaluation(predictions_base, y_prediction_meta, y_meta_test, n_base)
         metrics.append(metrics_per_fold)
         f = open("meta_class_distr_re_run3.txt", "w")
-        f.write("meta input: " + str(np.asarray((unique_input, counts_input)).T) + "/n")
-        f.write("meta output: " + str(np.asarray((unique_output, counts_output)).T) + "/n")
+        f.write("meta input: " + str(np.asarray((unique_input, counts_input)).T) + "\n")
+        f.write("meta output: " + str(np.asarray((unique_output, counts_output)).T) + "\n")
         f.close()
     return np.array(metrics)
 

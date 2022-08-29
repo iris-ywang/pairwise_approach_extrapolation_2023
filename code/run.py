@@ -38,7 +38,7 @@ if __name__ == '__main__':
         # pre-processed data
 
         f = open("meta_class_distr.txt", "w")
-        f.write(chembl_info["File name"][file])
+        f.write(chembl_info["File name"][file] + "\n")
         f.close()
 
         # TODO: may need to change the way of getting parent directory if this does not work on windows
