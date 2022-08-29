@@ -3,6 +3,7 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, n
 from scipy.stats import spearmanr, kendalltau
 from scipy.optimize import minimize
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 from perform_base_case import generate_meta_data
 
@@ -159,7 +160,7 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
         x_meta_train, y_meta_train = meta_datum
         y_meta_class = transform_meta_class_forward(x_meta_train[:, :n_base], y_meta_train)
         unique_input, counts_input = np.unique(y_meta_class, return_counts=True)
-        ms = RandomForestClassifier(n_jobs=-1, random_state=1)
+        ms = KNeighborsClassifier(n_jobs=-1)
         meta_model = ms.fit(x_meta_train, y_meta_class)
 
         # generate x_meta_test
@@ -172,9 +173,10 @@ def run_stacking(data: dict, meta_data: dict) -> np.ndarray:
         y_prediction_meta = transform_meta_class_backward(x_meta_test[:, :n_base], y_class_meta)
         metrics_per_fold = meta_evaluation(predictions_base, y_prediction_meta, y_meta_test, n_base)
         metrics.append(metrics_per_fold)
-        f = open("meta_class_distr_re_run3.txt", "w")
+        f = open("meta_class_distr.txt", "a")
         f.write("meta input: " + str(np.asarray((unique_input, counts_input)).T) + "\n")
         f.write("meta output: " + str(np.asarray((unique_output, counts_output)).T) + "\n")
+        f.write('\n')
         f.close()
     return np.array(metrics)
 
