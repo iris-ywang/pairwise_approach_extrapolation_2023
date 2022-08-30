@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 from pa_basics.import_chembl_data import dataset
 from split_data import generate_train_test_sets
@@ -39,9 +40,9 @@ if __name__ == '__main__':
         connection = "/input/qsar_data_unsorted/"
         train_test = dataset(os.getcwd() + connection + chembl_info["File name"][file])
 
-        data = generate_train_test_sets(train_test, only_fp=True)
+        data = generate_train_test_sets(train_test, multiple_tanimoto=True)
         metrics = run_model(data)
 
         all_metrics.append(metrics)
-        np.save("feature_FPs_only.npy", np.array(all_metrics))
+        np.save("feature_multiple_tanimoto_only.npy", np.array(all_metrics))
 

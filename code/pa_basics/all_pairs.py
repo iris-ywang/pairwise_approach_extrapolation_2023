@@ -11,7 +11,7 @@ from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances, man
 from scipy.spatial.distance import dice, yule, kulsinski, sokalmichener
 
 
-def paired_data(data, with_similarity=False, with_fp=False, only_fp=False):
+def paired_data(data, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
     """
     Generate all possible pairs from a QSAR dataset
 
@@ -21,7 +21,7 @@ def paired_data(data, with_similarity=False, with_fp=False, only_fp=False):
     :param with_fp: bool - if true, the pairwise features include original samples' FP
     :return: a dict - keys = (ID_a, ID_b); values = [Y_ab, X1, X2, ...Xn]
     """
-    pairing_tool = PairingDataset(data, with_similarity, with_fp, only_fp)
+    pairing_tool = PairingDataset(data, with_similarity, with_fp, only_fp, multiple_tanimoto)
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = executor.map(pairing_tool.parallelised_pairing_process, range(pairing_tool.n_combinations))
@@ -34,9 +34,9 @@ class PairingDataset:
     so that in line 37, we only need to pass iteratively different combinations of sample IDs as argument to
     generate all the pairs.
     """
-    def __init__(self, data, with_similarity, with_fp, only_fp):
+    def __init__(self, data, with_similarity, with_fp, only_fp, multiple_tanimoto):
         self.data = data
-        self.feature_variation = [with_similarity, with_fp, only_fp]
+        self.feature_variation = [with_similarity, with_fp, only_fp, multiple_tanimoto]
 
         self.n_samples, self.n_columns = np.shape(data)
         self.permutation_pairs = list(permutations(range(self.n_samples), 2)) + [(a, a) for a in range(self.n_samples)]
@@ -65,7 +65,7 @@ def pair_2samples(n_columns, sample_a, sample_b, feature_variation):
     :param feature_variation: list of bool - if any of them is true, the pairwise features vary according to the request
     :return:
     """
-    with_similarity, with_fp, only_fp = feature_variation
+    with_similarity, with_fp, only_fp, multiple_tanimoto = feature_variation
     delta_y = sample_a[0, 0] - sample_b[0, 0]
     new_sample = [delta_y]
     if only_fp:
@@ -88,6 +88,10 @@ def pair_2samples(n_columns, sample_a, sample_b, feature_variation):
 
     if with_fp:
         new_sample += list(sample_a[0, 1:]) + list(sample_b[0, 1:])
+
+    if multiple_tanimoto:
+        tanimoto = jaccard_score(sample_a[0, 1:], sample_b[0, 1:])
+        new_sample *= tanimoto
 
     return new_sample
 
