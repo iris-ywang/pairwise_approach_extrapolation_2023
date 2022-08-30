@@ -11,16 +11,17 @@ from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances, man
 from scipy.spatial.distance import dice, yule, kulsinski, sokalmichener
 
 
-def paired_data(data, with_similarity=False, with_fp=False):
+def paired_data(data, with_similarity=False, with_fp=False, only_fp=False):
     """
     Generate all possible pairs from a QSAR dataset
 
+    :param only_fp: bool - if true, the pairwise features only contains original samples' FP
     :param data: np.array of all samples (train_test) - [y, x1, x2, ..., xn]
     :param with_similarity: bool - if true, the pairwise features include pairwise similarity measures
     :param with_fp: bool - if true, the pairwise features include original samples' FP
     :return: a dict - keys = (ID_a, ID_b); values = [Y_ab, X1, X2, ...Xn]
     """
-    pairing_tool = PairingDataset(data, with_similarity, with_fp)
+    pairing_tool = PairingDataset(data, with_similarity, with_fp, only_fp)
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = executor.map(pairing_tool.parallelised_pairing_process, range(pairing_tool.n_combinations))
@@ -33,10 +34,9 @@ class PairingDataset:
     so that in line 37, we only need to pass iteratively different combinations of sample IDs as argument to
     generate all the pairs.
     """
-    def __init__(self, data, with_similarity, with_fp):
+    def __init__(self, data, with_similarity, with_fp, only_fp):
         self.data = data
-        self.with_similarity = with_similarity
-        self.with_FP = with_fp
+        self.feature_variation = [with_similarity, with_fp, only_fp]
 
         self.n_samples, self.n_columns = np.shape(data)
         self.permutation_pairs = list(permutations(range(self.n_samples), 2)) + [(a, a) for a in range(self.n_samples)]
@@ -47,11 +47,11 @@ class PairingDataset:
         sample_a = self.data[sample_id_a: sample_id_a + 1, :]
         sample_b = self.data[sample_id_b: sample_id_b + 1, :]
 
-        pair_ab = pair_2samples(self.n_columns, sample_a, sample_b, self.with_similarity, self.with_FP)
+        pair_ab = pair_2samples(self.n_columns, sample_a, sample_b, self.feature_variation)
         return (sample_id_a, sample_id_b), pair_ab
 
 
-def pair_2samples(n_columns, sample_a, sample_b, with_similarity=False, with_fp=False):
+def pair_2samples(n_columns, sample_a, sample_b, feature_variation):
     """
     Transform the information from two single samples to a pair
     Note the Rules of pairwise features:
@@ -62,12 +62,14 @@ def pair_2samples(n_columns, sample_a, sample_b, with_similarity=False, with_fp=
     :param n_columns: int
     :param sample_a: np.array - Sample A in the shape of (1, n_columns), [y, x1, x2, ...]
     :param sample_b: np.array - Sample B in the shape of (1, n_columns), [y, x1, x2, ...]
-    :param with_similarity: bool - if true, the pairwise features include pairwise similarity measures
-    :param with_fp: bool - if true, the pairwise features include original samples' FP
+    :param feature_variation: list of bool - if any of them is true, the pairwise features vary according to the request
     :return:
     """
+    with_similarity, with_fp, only_fp = feature_variation
     delta_y = sample_a[0, 0] - sample_b[0, 0]
     new_sample = [delta_y]
+    if only_fp:
+        return list(sample_a[0, 1:]) + list(sample_b[0, 1:])
 
     for feature_id in range(1, n_columns):
         feature_value_a = sample_a[0, feature_id]

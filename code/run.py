@@ -2,8 +2,7 @@ import os
 
 from pa_basics.import_chembl_data import dataset
 from split_data import generate_train_test_sets
-from perform_base_case import run_base_models
-from perform_stacking import run_stacking
+from build_model import run_model
 
 
 def load_datasets():
@@ -30,7 +29,7 @@ if __name__ == '__main__':
     all_metrics = []
 
     for file in range(len(chembl_info)):
-        if len(all_metrics) > 150: break
+        if len(all_metrics) > 100: break
         if chembl_info["Repetition Rate"][file] > 0.15: continue
         if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
         # If dataset passes the above criteria, then it gives a dict of fold number and their corresponding
@@ -39,10 +38,10 @@ if __name__ == '__main__':
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         connection = "/input/qsar_data_unsorted/"
         train_test = dataset(os.getcwd() + connection + chembl_info["File name"][file])
-        data = generate_train_test_sets(train_test)
 
-        meta_data = run_base_models(data)  # a dict: key = fold number, values = (x_meta, y_meta)
-        metrics = run_stacking(data,
-                               meta_data)  # np array: shape = (number_of_fold, number_of_base+1, number_of_metric)
+        data = generate_train_test_sets(train_test, only_fp=True)
+        metrics = run_model(data)
+
         all_metrics.append(metrics)
+        np.save("feature_FPs_only.npy", np.array(all_metrics))
 
