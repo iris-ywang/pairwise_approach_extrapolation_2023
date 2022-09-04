@@ -78,7 +78,7 @@ def train_test_split(pairs, train_ids, test_ids):
             'c3_test_pair_ids': c3_keys_del}
 
 
-def generate_train_test_sets(train_test, with_similarity=False, with_fp=False, only_fp=False):
+def generate_train_test_sets(train_test, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
     """
     Generate training sets and test sets for standard approach(regression on FP and activities) and for pairwise approach
      (regression on pairwise features and differences in activities) for each fold of cross validation
@@ -88,7 +88,7 @@ def generate_train_test_sets(train_test, with_similarity=False, with_fp=False, o
     """
     fold = 5
     y_true = np.array(train_test[:, 0])
-    pairs = paired_data(train_test, with_similarity, with_fp, only_fp)
+    pairs = paired_data(train_test, with_similarity, with_fp, only_fp, multiple_tanimoto)
 
     train_test_data = {}
     kf = KFold(n_splits=fold, random_state=0)
