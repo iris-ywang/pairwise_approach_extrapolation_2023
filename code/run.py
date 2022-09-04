@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas as pd
 
 from pa_basics.import_chembl_data import dataset
 from split_data import generate_train_test_sets
