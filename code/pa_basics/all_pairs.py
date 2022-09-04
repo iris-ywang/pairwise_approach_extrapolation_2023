@@ -91,7 +91,7 @@ def pair_2samples(n_columns, sample_a, sample_b, feature_variation):
 
     if multiple_tanimoto:
         tanimoto = jaccard_score(sample_a[0, 1:], sample_b[0, 1:])
-        new_sample *= tanimoto
+        new_sample = [i * tanimoto for i in new_sample]
 
     return new_sample
 
