@@ -91,9 +91,9 @@ def performance_pairwise_approach(all_data):
 
 
 def run_model(data):
-    metrics = {}
+    metrics = []
     for outer_fold, datum in data.items():
         metric_sa = performance_standard_approach(datum)
         metric_pa = performance_pairwise_approach(datum)
-        metrics[outer_fold] = metric_sa + metric_pa
+        metrics.append( [metric_sa] + metric_pa )
     return metrics
