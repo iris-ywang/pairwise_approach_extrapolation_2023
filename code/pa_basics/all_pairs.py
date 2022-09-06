@@ -69,7 +69,8 @@ def pair_2samples(n_columns, sample_a, sample_b, feature_variation):
     delta_y = sample_a[0, 0] - sample_b[0, 0]
     new_sample = [delta_y]
     if only_fp:
-        return list(sample_a[0, 1:]) + list(sample_b[0, 1:])
+        new_sample += list(sample_a[0, 1:]) + list(sample_b[0, 1:])
+        return new_sample
 
     for feature_id in range(1, n_columns):
         feature_value_a = sample_a[0, feature_id]

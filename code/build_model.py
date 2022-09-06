@@ -82,7 +82,7 @@ def performance_pairwise_approach(all_data):
     # estimate activity values from C2-type test pairs via arithmetic mean
     y_EstimateFromYpa = estimate_y_from_averaging(Y_pa_c2, all_data['c2_test_pair_ids'], all_data['test_ids'],
                                                   all_data['y_true'])
-    print(y_EstimateFromYpa)
+    
     metrics_Yc2 = metrics_evaluation(all_data["c2_test_pairs"][:, 0], Y_pa_c2)
     metrics_Yc3 = metrics_evaluation(all_data["c3_test_pairs"][:, 0], Y_pa_c3)
     metrics_y_est = metrics_evaluation(all_data["test_set"][:, 0], y_EstimateFromYpa)

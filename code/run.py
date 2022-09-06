@@ -41,9 +41,9 @@ if __name__ == '__main__':
         connection = "/input/qsar_data_unsorted/"
         train_test = dataset(os.getcwd() + connection + chembl_info["File name"][file])
 
-        data = generate_train_test_sets(train_test)
+        data = generate_train_test_sets(train_test, only_fp=True)
         metrics = run_model(data)
 
         all_metrics.append(metrics)
-        np.save("categorical_original_design.npy", np.array(all_metrics))
+        np.save("original_fp_only.npy", np.array(all_metrics))
 
