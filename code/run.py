@@ -45,5 +45,5 @@ if __name__ == '__main__':
         metrics = run_model(data)
 
         all_metrics.append(metrics)
-        np.save("categorical_original_design.npy", np.array(all_metrics))
+        np.save("RF_min_samples_leaf_2.npy", np.array(all_metrics))
 
