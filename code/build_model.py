@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.linear_model import Lasso
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score
 from scipy.stats import spearmanr, kendalltau
 
