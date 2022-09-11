@@ -76,8 +76,8 @@ def performance_standard_approach(datum):
 
 def performance_pairwise_approach(all_data):
     # regression on pairs of FP for C2 and C3 type test pairs
-    _, Y_pa_c2 = regression(RandomForestRegressor(min_samples_leaf=2, n_jobs=-1, random_state=1), all_data['train_pairs'], all_data['c2_test_pairs'])
-    _, Y_pa_c3 = regression(RandomForestRegressor(min_samples_leaf=2, n_jobs=-1, random_state=1), all_data['train_pairs'], all_data['c3_test_pairs'])
+    _, Y_pa_c2 = regression(RandomForestRegressor(min_samples_leaf=3, n_jobs=-1, random_state=1), all_data['train_pairs'], all_data['c2_test_pairs'])
+    _, Y_pa_c3 = regression(RandomForestRegressor(min_samples_leaf=3, n_jobs=-1, random_state=1), all_data['train_pairs'], all_data['c3_test_pairs'])
 
     # estimate activity values from C2-type test pairs via arithmetic mean
     y_EstimateFromYpa = estimate_y_from_averaging(Y_pa_c2, all_data['c2_test_pair_ids'], all_data['test_ids'],
