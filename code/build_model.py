@@ -5,7 +5,7 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, n
 from scipy.stats import spearmanr, kendalltau
 
 
-def regression(model, train_data, test_data=None):
+def build_ml_model(model, train_data, test_data=None):
     x_train = train_data[:, 1:]
     y_train = train_data[:, 0]
     fitted_model = model.fit(x_train, y_train)
