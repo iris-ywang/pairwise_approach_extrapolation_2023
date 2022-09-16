@@ -9,8 +9,8 @@ from build_model import run_model
 
 if __name__ == '__main__':
     file = 'test_case.csv'
-    train_test = dataset(file, shuffle_state=None)  # No shuffling of dataset
+    train_test = dataset(file, shuffle_state=1)  # No shuffling of dataset
     # Test dataset is too small to pass the data_check(), so this step is skipped.
-    data = generate_train_test_sets(train_test, multiple_tanimoto=True)
-    metrics = run_model(data)
+    data = generate_train_test_sets(train_test, fold=3)
+    metrics = run_model(data, percentage_of_top_samples=0.2)
     print('Finished')

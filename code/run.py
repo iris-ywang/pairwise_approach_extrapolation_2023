@@ -41,9 +41,9 @@ if __name__ == '__main__':
         connection = "/input/qsar_data_unsorted/"
         train_test = dataset(os.getcwd() + connection + chembl_info["File name"][file])
 
-        data = generate_train_test_sets(train_test)
-        metrics = run_model(data)
+        data = generate_train_test_sets(train_test, fold=3)
+        metrics = run_model(data, percentage_of_top_samples=0.2)
 
         all_metrics.append(metrics)
-        np.save("RF_min_samples_leaf_3.npy", np.array(all_metrics))
+        np.save("extrapolation_evaluation_run1.npy", np.array(all_metrics))
 

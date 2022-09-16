@@ -3,13 +3,43 @@ from sklearn.metrics import mean_squared_error
 
 
 class EvaluateAbilityToIdentifyTopTestSamples:
-    def __init__(self, percentage_of_top_samples, y_train_with_true_test, y_train_with_predicted_test, train_ids,
-                 test_ids):
+    def __init__(self, percentage_of_top_samples, y_train_with_true_test, y_train_with_predicted_test,
+                 all_data):
         self.y_pred_all = y_train_with_predicted_test
         self.y_true_all = y_train_with_true_test
-        self.test_ids = test_ids
-        self.train_ids = train_ids
+        self.all_data = all_data
+        self.test_ids = all_data["test_ids"]
+        self.train_ids = all_data['train_ids']
         self.pc = percentage_of_top_samples
+
+    def find_x_extreme_pairs(self, y_pred_all, Y_sign_and_abs_predictions=None):
+        if Y_sign_and_abs_predictions is not None:
+            Y_c2_abs = np.array(list(Y_sign_and_abs_predictions.values()))[:, 0]
+        else:
+            Y_c2_abs = self.pairwise_differences_for_standard_approach(y_pred_all)
+        orders_test_Y_abs = np.argsort(-Y_c2_abs)
+        top_x_tests = orders_test_Y_abs[:self.x * 10]
+        bottom_x_tests = orders_test_Y_abs[-self.x * 10:]
+
+        return top_x_tests, bottom_x_tests
+
+    def pairwise_differences_for_standard_approach(self, y_pred_all):
+        Y_c2_abs_derived = []
+        for pair_id in self.all_data["c2_test_pair_ids"]:
+            id_a, id_b = pair_id
+            Y_c2_abs_derived.append(abs(y_pred_all[id_a] - y_pred_all[id_b]))
+        return np.array(Y_c2_abs_derived)
+
+    def find_sum_of_estimates_of_top_x_tests(self, y_all_pred):
+        # a list of sample IDs in the descending order of activity values
+        orders_overall = np.argsort(-y_all_pred)
+        orders_tests = [i for i in orders_overall if i in self.test_ids]
+        top_x_tests = orders_tests[:self.x]  # index of top 5 testids
+        sum_y_true_of_identified_test = []
+
+        for test_id in top_x_tests:
+            sum_y_true_of_identified_test.append(self.y_true_all[test_id])
+        return sum(sum_y_true_of_identified_test)
 
     def find_top_test_ids(self, y_pred_all, Y_sign_and_abs_predictions=None):
         # trains == train samples; tests == test samples.
@@ -28,26 +58,26 @@ class EvaluateAbilityToIdentifyTopTestSamples:
         tests_better_than_top_train = list(overall_orders[:top_train_order_position])
 
         if Y_sign_and_abs_predictions is None:
-            return top_tests, tests_better_than_top_train, top_train_id
+            final_estimate_of_y_and_delta_y = None
         else:
             final_estimate_of_y_and_delta_y = self.estimate_y_from_final_ranking_and_absolute_Y(
                 top_tests, tests_better_than_top_train, top_train_id, overall_orders, Y_sign_and_abs_predictions
             )
-            return top_tests, tests_better_than_top_train, top_train_id, final_estimate_of_y_and_delta_y
+        return top_tests, tests_better_than_top_train, top_train_id, final_estimate_of_y_and_delta_y
 
     def estimate_y_from_final_ranking_and_absolute_Y(self, top_tests, tests_better_than_top_train, top_train_id,
                                                      overall_orders, Y_sign_and_abs_predictions):
         final_estimate_of_y_and_delta_y = {}
-        for test_id in (top_tests + tests_better_than_top_train):
-            test_estimate = self.estimate_averaged_y_from_final_ranking(overall_orders, test_id,
-                                                                        Y_sign_and_abs_predictions)
+        for test_id in top_tests:
+            y_test_estimate = self.estimate_averaged_y_from_final_ranking(overall_orders, test_id,
+                                                                          Y_sign_and_abs_predictions)
             if test_id in tests_better_than_top_train:
                 Y_rough = Y_sign_and_abs_predictions[(test_id, top_train_id)][0] * 1
             if test_id in top_tests:
                 Y_rough = Y_sign_and_abs_predictions[(test_id, top_train_id)][0] * -1
 
-            Y_ave = test_estimate - self.y_true_all[top_train_id]
-            final_estimate_of_y_and_delta_y[test_id] = [Y_rough, Y_ave, self.y_true_all[test_id], test_estimate]
+            Y_ave = y_test_estimate - self.y_true_all[top_train_id]
+            final_estimate_of_y_and_delta_y[test_id] = [Y_rough, Y_ave, self.y_true_all[test_id], y_test_estimate]
         return final_estimate_of_y_and_delta_y
 
     def estimate_averaged_y_from_final_ranking(self, overall_orders, test_id, Y_sign_and_abs_predictions):
@@ -67,25 +97,54 @@ class EvaluateAbilityToIdentifyTopTestSamples:
                                       + self.y_true_all[train_id])
         return np.mean(test_estimates)
 
-    def find_sum_of_estimates_of_top_x_tests(self, x, y_all_pred, Y_sign_and_abs_predictions=None):
-        orders_overall = np.argsort(-y_all_pred)
-        orders_tests = [i for i in orders_overall if i in self.test_ids]
-        top_x_tests = orders_tests[:x]  # index of top 5 testids
-        sum_y_pred = []
-        sum_y_true = []
+    def run_evaluation(self, Y_sign_and_abs_predictions=None):
+        # Correct Ratio:
+        top_tests_true, tests_better_than_top_train_true, _, _ = self.find_top_test_ids(self.y_true_all)
+        top_tests, tests_better_than_top_train, top_train_id, final_estimate_of_y_and_Y = \
+            self.find_top_test_ids(self.y_pred_all, Y_sign_and_abs_predictions)
 
-        if Y_sign_and_abs_predictions is None:  # i.e. not pairwise
-            for test_id in top_x_tests:
-                sum_y_pred.append(y_all_pred[test_id])
-                sum_y_true.append(self.y_true_all[test_id])
-        else:  # i.e.  pairwise
-            for test_id in top_x_tests:
-                sum_y_pred.append(
-                    self.estimate_averaged_y_from_final_ranking(orders_overall, test_id, Y_sign_and_abs_predictions))
-                sum_y_true.append(self.y_true_all[test_id])
-        accuracy = mean_squared_error(sum_y_pred, sum_y_true)
-        return sum(sum_y_pred), sum(sum_y_true), accuracy
+        if len(top_tests_true) > 0:
+            correct_ratio_exceeding_train = self.calculate_correct_ratio(tests_better_than_top_train_true,
+                                                                         tests_better_than_top_train)
+            correct_ratio_top_of_dataset = self.calculate_correct_ratio(top_tests_true, top_tests)
+
+            # Summation Ratio:
+            self.x = 5 if len(top_tests_true) >= 5 else len(top_tests_true)
+            sum_y_true_of_pred_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_pred_all)
+            sum_y_true_of_true_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_true_all)
+            summation_ratio = sum_y_true_of_pred_top_test / sum_y_true_of_true_top_test
+
+            # MSE(corectly identified tests in top 20%)
+            mse_of_tests_top_pc = self.calculate_mse_top_tests_identified(top_tests_true, top_tests,
+                                                                          final_estimate_of_y_and_Y)
+
+            # Correct Ratio for Y extremes
+            top_x_pairs_true, bottom_x_pairs_true = self.find_x_extreme_pairs(self.y_true_all)
+            top_x_pairs_pred, bottom_x_pairs_pred = self.find_x_extreme_pairs(self.y_pred_all,
+                                                                              Y_sign_and_abs_predictions)
+            correct_ratio_top_pairs = self.calculate_correct_ratio(top_x_pairs_true, top_x_pairs_pred)
+            correct_ratio_bottom_pairs = self.calculate_correct_ratio(bottom_x_pairs_true, bottom_x_pairs_pred)
+
+            return [correct_ratio_exceeding_train, correct_ratio_top_of_dataset, summation_ratio, mse_of_tests_top_pc, \
+                    correct_ratio_top_pairs, correct_ratio_bottom_pairs]
+        else:
+            return [np.nan for _ in range(6)]
 
     @staticmethod
-    def calculate_correct_rate(correctly_identified_top_samples, true_top_samples):
-        return len(correctly_identified_top_samples) / len(true_top_samples) if true_top_samples else np.nan
+    def calculate_correct_ratio(top_samples_true, top_samples_pred):
+        correctly_identified_top_samples = list(set(top_samples_pred) & set(top_samples_true))
+        return len(correctly_identified_top_samples) / len(top_samples_true) if len(top_samples_true) > 0 else np.nan
+
+    def calculate_mse_top_tests_identified(self, top_samples_true, top_samples_pred, pairwise_estimates=None):
+        correctly_identified_top_samples = list(set(top_samples_pred) & set(top_samples_true))
+
+        if len(correctly_identified_top_samples) > 0:
+            if pairwise_estimates is None:
+                return mean_squared_error(self.y_true_all[correctly_identified_top_samples],
+                                          self.y_pred_all[correctly_identified_top_samples])
+            if pairwise_estimates is not None:
+                y_true_tests = [pairwise_estimates[test_id][2] for test_id in correctly_identified_top_samples]
+                y_pred_tests = [pairwise_estimates[test_id][3] for test_id in correctly_identified_top_samples]
+                return mean_squared_error(y_true_tests, y_pred_tests)
+        else:
+            return np.nan

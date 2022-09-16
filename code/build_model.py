@@ -1,8 +1,10 @@
 import numpy as np
 from sklearn.linear_model import Lasso
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score
 from scipy.stats import spearmanr, kendalltau
+from extrapolation_evaluation import EvaluateAbilityToIdentifyTopTestSamples
+from pa_basics.rating import rating_trueskill
 
 
 def build_ml_model(model, train_data, test_data=None):
@@ -69,31 +71,42 @@ def metrics_evaluation(y_true, y_predict):
     return [mse, mae, r2, rho, ndcg, tau]
 
 
-def performance_standard_approach(datum):
-    _, y_SA = regression(RandomForestRegressor(n_jobs=-1, random_state=1), datum['train_set'], datum['test_set'])
-    return metrics_evaluation(datum["test_set"][:, 0], y_SA)
+def performance_standard_approach(all_data, percentage_of_top_samples):
+    _, y_SA = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), all_data['train_set'], all_data['test_set'])
+    y_pred_all = np.array(all_data["y_true"])
+    y_pred_all[all_data["test_ids"]] = y_SA
+
+    metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
+                                                      y_pred_all, all_data).run_evaluation()
+    return metrics
 
 
-def performance_pairwise_approach(all_data):
+def performance_pairwise_approach(all_data, percentage_of_top_samples):
     # regression on pairs of FP for C2 and C3 type test pairs
-    _, Y_pa_c2 = regression(RandomForestRegressor(min_samples_leaf=3, n_jobs=-1, random_state=1), all_data['train_pairs'], all_data['c2_test_pairs'])
-    _, Y_pa_c3 = regression(RandomForestRegressor(min_samples_leaf=3, n_jobs=-1, random_state=1), all_data['train_pairs'], all_data['c3_test_pairs'])
+    # _, Y_pa_c2 = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), all_data['train_pairs'], all_data['c2_test_pairs'])
+    # _, Y_pa_c3 = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), all_data['train_pairs'], all_data['c3_test_pairs'])
 
-    # estimate activity values from C2-type test pairs via arithmetic mean
-    y_EstimateFromYpa = estimate_y_from_averaging(Y_pa_c2, all_data['c2_test_pair_ids'], all_data['test_ids'],
-                                                  all_data['y_true'])
-    
-    metrics_Yc2 = metrics_evaluation(all_data["c2_test_pairs"][:, 0], Y_pa_c2)
-    metrics_Yc3 = metrics_evaluation(all_data["c3_test_pairs"][:, 0], Y_pa_c3)
-    metrics_y_est = metrics_evaluation(all_data["test_set"][:, 0], y_EstimateFromYpa)
+    train_pairs_for_sign = np.array(all_data["train_pairs"])
+    train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
+    _, Y_pa_c2_sign = build_ml_model(RandomForestClassifier(n_jobs=-1, random_state=1), train_pairs_for_sign, all_data['c2_test_pairs'])
 
-    return [metrics_Yc2, metrics_Yc3, metrics_y_est]
+    train_pairs_for_abs = np.absolute(all_data["train_pairs"])
+    c2_test_pairs_for_abs = np.absolute(all_data['c2_test_pairs'])
+    _, Y_pa_c2_abs = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), train_pairs_for_abs, c2_test_pairs_for_abs)
+
+    Y_c2_sign_and_abs_predictions = dict(zip(all_data["c2_test_pair_ids"], np.array([Y_pa_c2_abs, Y_pa_c2_sign]).T))
+    y_ranking = rating_trueskill(Y_pa_c2_sign, all_data["c2_test_pair_ids"], all_data["y_true"])
+
+    metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
+                                                      y_ranking, all_data).run_evaluation(Y_c2_sign_and_abs_predictions)
+
+    return metrics
 
 
-def run_model(data):
+def run_model(data, percentage_of_top_samples):
     metrics = []
     for outer_fold, datum in data.items():
-        metric_sa = performance_standard_approach(datum)
-        metric_pa = performance_pairwise_approach(datum)
-        metrics.append( [metric_sa] + metric_pa )
+        metric_sa = performance_standard_approach(datum, percentage_of_top_samples)
+        metric_pa = performance_pairwise_approach(datum, percentage_of_top_samples)
+        metrics.append([metric_sa, metric_pa])
     return metrics
