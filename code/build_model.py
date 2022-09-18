@@ -74,14 +74,14 @@ def classification_evaluation(y_true, y_pred):
     acc = accuracy_score(np.sign(y_true), np.sign(y_pred))
     prec = precision_score(np.sign(y_true), np.sign(y_pred), average="macro", zero_division=0)
     cm = f1_score(np.sign(y_true), np.sign(y_pred), average='macro', zero_division=0)
-    return (acc, prec, cm)
+    return [acc, prec, cm]
 
 
 def distance_evaluation(y_true, y_pred):
     mse = mean_squared_error(abs(y_true), abs(y_pred))
     mae = mean_absolute_error(abs(y_true), abs(y_pred))
     r2 = r2_score(abs(y_true), abs(y_pred))
-    return (mse, mae, r2)
+    return [mse, mae, r2]
 
 
 def pairwise_differences_for_standard_approach(all_data, y_pred_all, type_of_test_pair_ids):
