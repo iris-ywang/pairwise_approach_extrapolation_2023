@@ -31,19 +31,19 @@ if __name__ == '__main__':
     all_metrics = []
 
     for file in range(len(chembl_info)):
-        if len(all_metrics) > 100: break
-        if chembl_info["Repetition Rate"][file] > 0.15: continue
-        if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
+        # if len(all_metrics) > 100: break
+        if chembl_info["Repetition Rate"][file] >= 0.50: continue
+        # if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
         # If dataset passes the above criteria, then it gives a dict of fold number and their corresponding
         # pre-processed data
 
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         connection = "/input/qsar_data_unsorted/"
-        train_test = dataset(os.getcwd() + connection + chembl_info["File name"][file])
+        train_test = dataset(os.getcwd() + connection + chembl_info["File name"][file], shuffle_state=1)
 
         data = generate_train_test_sets(train_test)
         metrics = run_model(data)
 
         all_metrics.append(metrics)
-        np.save("RF_min_samples_leaf_3.npy", np.array(all_metrics))
+        np.save("learn_signNdistance_separately_all_datasets.npy", np.array(all_metrics))
 
