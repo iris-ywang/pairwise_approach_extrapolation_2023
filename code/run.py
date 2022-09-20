@@ -33,7 +33,7 @@ if __name__ == '__main__':
     for file in range(len(chembl_info)):
         if len(all_metrics) > 100: break
         if chembl_info["Repetition Rate"][file] > 0.15: continue
-        if chembl_info["N(sample)"][file] > 100 or chembl_info["N(sample)"][file] < 90: continue
+        if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
         # If dataset passes the above criteria, then it gives a dict of fold number and their corresponding
         # pre-processed data
 
