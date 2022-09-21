@@ -4,7 +4,7 @@ Create all pairs
 
 import numpy as np
 from itertools import permutations
-import concurrent.futures
+import multiprocessing
 from sklearn.metrics import jaccard_score
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances, manhattan_distances
 
@@ -23,7 +23,7 @@ def paired_data(data, with_similarity=False, with_fp=False, only_fp=False, multi
     """
     pairing_tool = PairingDataset(data, with_similarity, with_fp, only_fp, multiple_tanimoto)
 
-    with concurrent.futures.ProcessPoolExecutor() as executor:
+    with multiprocessing.Pool() as executor:
         results = executor.map(pairing_tool.parallelised_pairing_process, range(pairing_tool.n_combinations))
     return dict(results)
 
