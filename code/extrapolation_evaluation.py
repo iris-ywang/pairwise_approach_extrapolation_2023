@@ -112,7 +112,17 @@ class EvaluateAbilityToIdentifyTopTestSamples:
             self.x = 5 if len(top_tests_true) >= 5 else len(top_tests_true)
             sum_y_true_of_pred_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_pred_all)
             sum_y_true_of_true_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_true_all)
-            summation_ratio = sum_y_true_of_pred_top_test / sum_y_true_of_true_top_test
+            summation_ratio_at_5 = sum_y_true_of_pred_top_test / sum_y_true_of_true_top_test
+
+            self.x = 10 if len(top_tests_true) >= 5 else len(top_tests_true)
+            sum_y_true_of_pred_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_pred_all)
+            sum_y_true_of_true_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_true_all)
+            summation_ratio_at_10 = sum_y_true_of_pred_top_test / sum_y_true_of_true_top_test
+
+            self.x = int(0.2*len(self.all_data["test_ids"])) if len(top_tests_true) >= 5 else 1
+            sum_y_true_of_pred_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_pred_all)
+            sum_y_true_of_true_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_true_all)
+            summation_ratio_at_20pc = sum_y_true_of_pred_top_test / sum_y_true_of_true_top_test
 
             # MSE(corectly identified tests in top 20%)
             mse_of_tests_top_pc = self.calculate_mse_top_tests_identified(top_tests_true, top_tests,
@@ -125,10 +135,12 @@ class EvaluateAbilityToIdentifyTopTestSamples:
             correct_ratio_top_pairs = self.calculate_correct_ratio(top_x_pairs_true, top_x_pairs_pred)
             correct_ratio_bottom_pairs = self.calculate_correct_ratio(bottom_x_pairs_true, bottom_x_pairs_pred)
 
-            return [correct_ratio_exceeding_train, correct_ratio_top_of_dataset, summation_ratio, mse_of_tests_top_pc, \
+            return [correct_ratio_exceeding_train, correct_ratio_top_of_dataset,
+                    summation_ratio_at_5, summation_ratio_at_10,
+                    summation_ratio_at_20pc, mse_of_tests_top_pc,
                     correct_ratio_top_pairs, correct_ratio_bottom_pairs]
         else:
-            return [np.nan for _ in range(6)]
+            return [np.nan for _ in range(8)]
 
     @staticmethod
     def calculate_correct_ratio(top_samples_true, top_samples_pred):
