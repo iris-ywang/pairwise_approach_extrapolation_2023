@@ -31,8 +31,7 @@ if __name__ == '__main__':
     chembl_info = pd.read_csv("input//chembl_datasets_info.csv")
     all_metrics = []
 
-    # number_of_existing_results = len(np.load("learn_signNdistance_separately_all_datasets.npy"))
-    number_of_existing_results = 4
+    number_of_existing_results = len(np.load("learn_signNdistance_separately_all_datasets.npy"))
     count = 0
     for file in range(len(chembl_info)):
         # if len(all_metrics) > 100: break
@@ -56,7 +55,7 @@ if __name__ == '__main__':
         print("Running models...")
         start = time.time()
         metrics = run_model(data)
-        print(":::Time used: " + str(time.time() - start))
+        print(":::Time used: ", time.time() - start, "\n")
 
         all_metrics.append(metrics)
         np.save("learn_signNdistance_separately_all_datasets2.npy", np.array(all_metrics))
