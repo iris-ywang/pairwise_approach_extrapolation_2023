@@ -120,7 +120,7 @@ def performance_pairwise_approach(all_data):
                                     c2_test_pairs_for_abs)
     # Y_c2_sign_and_abs_predictions = dict(zip(all_data["c2_test_pair_ids"], np.array([Y_pa_c2_abs, Y_pa_c2_sign]).T))
     y_ranking = rating_trueskill(Y_pa_c2_sign, all_data["c2_test_pair_ids"], all_data["y_true"])
-    Y_pa_c2 = np.sign(pairwise_differences_for_standard_approach(all_data, y_ranking))
+    Y_pa_c2 = np.sign(pairwise_differences_for_standard_approach(all_data, y_ranking)) * Y_pa_c2_abs
     y_EstimateFromRankNDistance = estimate_y_from_averaging(Y_pa_c2, all_data['c2_test_pair_ids'], all_data['test_ids'],
                                                             all_data['y_true'])
     # y_EstimateFromRankNDistance = estimate_averaged_y_from_final_ranking(all_data, y_ranking,
