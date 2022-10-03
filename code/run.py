@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import time
+import warnings
 
 from pa_basics.import_chembl_data import dataset
 from split_data import generate_train_test_sets
@@ -28,6 +29,8 @@ def load_datasets():
 
 
 if __name__ == '__main__':
+    warnings.filterwarnings("ignore")
+
     chembl_info = pd.read_csv("input//chembl_datasets_info.csv")
     all_metrics = []
 
@@ -40,9 +43,9 @@ if __name__ == '__main__':
         # If dataset passes the above criteria, then it gives a dict of fold number and their corresponding
         # pre-processed data
 
-        count += 1
-        if count <= number_of_existing_results:
-            continue
+        # count += 1
+        # if count <= number_of_existing_results:
+        #     continue
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         print("On Dataset No.", count, ", ", chembl_info["File name"][file])
         connection = "/input/qsar_data_unsorted/"
