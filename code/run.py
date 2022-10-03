@@ -37,15 +37,15 @@ if __name__ == '__main__':
     number_of_existing_results = 101
     count = 0
     for file in range(len(chembl_info)):
-        if len(all_metrics) > 100: break
+        # if len(all_metrics) > 100: break
         if chembl_info["Repetition Rate"][file] > 0.15: continue
         if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
         # If dataset passes the above criteria, then it gives a dict of fold number and their corresponding
         # pre-processed data
 
-        # count += 1
-        # if count <= number_of_existing_results:
-        #     continue
+        count += 1
+        if count <= number_of_existing_results:
+            continue
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         print("On Dataset No.", count, ", ", chembl_info["File name"][file])
         connection = "/input/qsar_data_unsorted/"
@@ -61,5 +61,5 @@ if __name__ == '__main__':
         print(":::Time used: ", time.time() - start, "\n")
 
         all_metrics.append(metrics)
-        np.save("extrapolation_evaluation_run3.npy", np.array(all_metrics))
+        np.save("extrapolation_evaluation_run4.npy", np.array(all_metrics))
 
