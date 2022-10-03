@@ -128,8 +128,8 @@ def performance_pairwise_approach(all_data):
     # metrics_Yc2 = metrics_evaluation(all_data["c2_test_pairs"][:, 0], Y_pa_c2)
     # metrics_Yc3 = metrics_evaluation(all_data["c3_test_pairs"][:, 0], Y_pa_c3)
     metrics_y_est = metrics_evaluation(all_data["test_set"][:, 0], y_EstimateFromRankNDistance)
-    print(spearmanr(all_data['y_true'][all_data['test_ids']], y_ranking[all_data['test_ids']]),
-          spearmanr(all_data['y_true'][all_data['test_ids']], y_EstimateFromRankNDistance))
+    # print(spearmanr(all_data['y_true'][all_data['test_ids']], y_ranking[all_data['test_ids']]),
+    #       spearmanr(all_data['y_true'][all_data['test_ids']], y_EstimateFromRankNDistance))
     return metrics_y_est
 
 
