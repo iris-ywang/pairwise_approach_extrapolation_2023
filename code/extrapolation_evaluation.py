@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, precision_score, recall_score, f1_score
 
 
 class EvaluateAbilityToIdentifyTopTestSamples:
@@ -97,17 +97,38 @@ class EvaluateAbilityToIdentifyTopTestSamples:
                                       + self.y_true_all[train_id])
         return np.mean(test_estimates)
 
+    def estimate_precision_recall(self, top_tests_true, top_tests):
+        test_samples_boolean_true = [0 for _ in range(len(self.test_ids))]
+        for top_test_id_true in top_tests_true:
+            position_in_test_ids = int(np.where(self.test_ids == top_test_id_true)[0])
+            test_samples_boolean_true[position_in_test_ids] = 1
+
+        test_samples_boolean_pred = [0 for _ in range(len(self.test_ids))]
+        for top_test_id in top_tests:
+            position_in_test_ids = int(np.where(self.test_ids == top_test_id)[0])
+            test_samples_boolean_pred[position_in_test_ids] = 1
+
+        precision = precision_score(test_samples_boolean_true, test_samples_boolean_pred)
+        recall = recall_score(test_samples_boolean_true, test_samples_boolean_pred)
+        f1 = f1_score(test_samples_boolean_true, test_samples_boolean_pred)
+
+        return precision, recall, f1
+
     def run_evaluation(self, Y_sign_and_abs_predictions=None):
-        # Correct Ratio:
         top_tests_true, tests_better_than_top_train_true, _, _ = self.find_top_test_ids(self.y_true_all)
         top_tests, tests_better_than_top_train, top_train_id, final_estimate_of_y_and_Y = \
             self.find_top_test_ids(self.y_pred_all, Y_sign_and_abs_predictions)
 
         if len(top_tests_true) > 0:
+            # Correct Ratio:
             correct_ratio_exceeding_train = self.calculate_correct_ratio(tests_better_than_top_train_true,
                                                                          tests_better_than_top_train)
             correct_ratio_top_of_dataset = self.calculate_correct_ratio(top_tests_true, top_tests)
 
+            # precision & recall:
+            precision_top, recall_top, f1_top = self.estimate_precision_recall(top_tests_true, top_tests)
+            precision_better, recall_better, f1_better = self.estimate_precision_recall(tests_better_than_top_train_true,
+                                                                                        tests_better_than_top_train)
             # Summation Ratio:
             self.x = 5 if len(top_tests_true) >= 5 else len(top_tests_true)
             sum_y_true_of_pred_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_pred_all)
@@ -138,9 +159,11 @@ class EvaluateAbilityToIdentifyTopTestSamples:
             return [correct_ratio_exceeding_train, correct_ratio_top_of_dataset,
                     summation_ratio_at_5, summation_ratio_at_10,
                     summation_ratio_at_20pc, mse_of_tests_top_pc,
-                    correct_ratio_top_pairs, correct_ratio_bottom_pairs]
+                    correct_ratio_top_pairs, correct_ratio_bottom_pairs,
+                    precision_top, recall_top, f1_top,
+                    precision_better, recall_better, f1_better]
         else:
-            return [np.nan for _ in range(8)]
+            return [np.nan for _ in range(14)]
 
     @staticmethod
     def calculate_correct_ratio(top_samples_true, top_samples_pred):
