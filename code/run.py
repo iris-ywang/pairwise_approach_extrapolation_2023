@@ -55,5 +55,5 @@ if __name__ == '__main__':
         print(":::Time used: ", time.time() - start, "\n")
 
         all_metrics.append(metrics)
-        np.save("extrapolation_evaluation_run4.npy", np.array(all_metrics))
+        np.save("extrapolation_increase_train_size_run1.npy", np.array(all_metrics))
 
