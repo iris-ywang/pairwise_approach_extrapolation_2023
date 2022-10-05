@@ -5,7 +5,7 @@ import time
 import warnings
 
 from pa_basics.import_chembl_data import dataset
-from split_data import generate_train_test_sets
+from split_data import generate_train_test_sets_with_increasing_train_size
 from build_model import run_model
 
 
@@ -37,27 +37,21 @@ if __name__ == '__main__':
     number_of_existing_results = 101
     count = 0
     for file in range(len(chembl_info)):
-        # if len(all_metrics) > 100: break
-        if chembl_info["Repetition Rate"][file] > 0.15: continue
-        if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
-        # If dataset passes the above criteria, then it gives a dict of fold number and their corresponding
-        # pre-processed data
+        if chembl_info["File name"][file] != "data_CHEMBL3286.csv": continue
+        # data_CHEMBL3286.csv: size, 1002; repetition rate: 0.04
 
-        count += 1
-        if count <= number_of_existing_results:
-            continue
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         print("On Dataset No.", count, ", ", chembl_info["File name"][file])
         connection = "/input/qsar_data_unsorted/"
         train_test = dataset(os.getcwd() + connection + chembl_info["File name"][file], shuffle_state=1)
         print("Generating datasets...")
         start = time.time()
-        data = generate_train_test_sets(train_test, fold=10)
+        data = generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.1)
         print(":::Time used: ", time.time() - start)
 
         print("Running models...")
         start = time.time()
-        metrics = run_model(data, percentage_of_top_samples=0.2)
+        metrics = run_model(data, percentage_of_top_samples=0.1)
         print(":::Time used: ", time.time() - start, "\n")
 
         all_metrics.append(metrics)

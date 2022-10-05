@@ -61,6 +61,14 @@ def estimate_y_from_averaging(Y_pa_c2, c2_test_pair_ids, test_ids, y_true, Y_wei
     return np.divide(records[test_ids], weights[test_ids])
 
 
+def pairwise_differences_for_standard_approach(all_data, y_pred_all):
+    Y_c2_abs_derived = []
+    for pair_id in all_data["c2_test_pair_ids"]:
+        id_a, id_b = pair_id
+        Y_c2_abs_derived.append(y_pred_all[id_a] - y_pred_all[id_b])
+    return np.array(Y_c2_abs_derived)
+
+
 def metrics_evaluation(y_true, y_predict):
     rho = spearmanr(y_true, y_predict, nan_policy="omit")[0]
     ndcg = ndcg_score([y_true], [y_predict])
@@ -78,7 +86,8 @@ def performance_standard_approach(all_data, percentage_of_top_samples):
 
     metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
                                                       y_pred_all, all_data).run_evaluation()
-    return metrics
+    metrics_original = metrics_evaluation(all_data["test_set"][:, 0], y_SA)
+    return metrics + metrics_original
 
 
 def performance_pairwise_approach(all_data, percentage_of_top_samples):
@@ -99,8 +108,11 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples):
 
     metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
                                                       y_ranking, all_data).run_evaluation(Y_c2_sign_and_abs_predictions)
-
-    return metrics
+    Y_pa_c2 = np.sign(pairwise_differences_for_standard_approach(all_data, y_ranking)) * Y_pa_c2_abs
+    y_EstimateFromRankNDistance = estimate_y_from_averaging(Y_pa_c2, all_data['c2_test_pair_ids'], all_data['test_ids'],
+                                                            all_data['y_true'])
+    metrics_original = metrics_evaluation(all_data["test_set"][:, 0], y_EstimateFromRankNDistance)
+    return metrics + metrics_original
 
 
 def run_model(data, percentage_of_top_samples):

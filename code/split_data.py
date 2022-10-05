@@ -105,6 +105,44 @@ def generate_train_test_sets(train_test, fold, with_similarity=False, with_fp=Fa
     return train_test_data
 
 
+def generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.1, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
+    y_true = np.array(train_test[:, 0])
+    pairs = paired_data(train_test, with_similarity, with_fp, only_fp, multiple_tanimoto)
+
+    train_test_data = {}
+    train_test_splits = train_test_ids_wrt_step_size(train_test, step_size)
+    n_fold = 0
+    for train_ids, test_ids in train_test_splits:
+        train_test_data_per_fold = {'train_ids': train_ids, 'test_ids': test_ids, 'train_set': train_test[train_ids],
+                                    'test_set': train_test[test_ids], 'y_true': y_true}
+
+        # a dict of different types of pairs and their samples IDs
+        pairs_data = train_test_split(pairs, train_ids, test_ids)
+        train_test_data[n_fold] = {**train_test_data_per_fold, **pairs_data}
+
+        n_fold += 1
+
+    return train_test_data
+
+
+def train_test_ids_wrt_step_size(train_test, step_size):
+    total_samples = len(train_test)
+    part_size = int( total_samples * step_size )
+    sample_ids = list(range(total_samples))
+    steps = int(1 // step_size)
+    train_test_splits = []
+    for step in range(1, steps+1):
+        train_ids = sample_ids[:part_size * step]
+        test_ids = list(set(sample_ids) - set(train_ids))
+        train_test_splits.append((train_ids, test_ids))
+    return train_test_splits
+
+
+
+
+
+
+
 def load_and_check_data(filename, shuffle_state=None):
     train_test = dataset(filename, shuffle_state)  # load datasets from the file_path; filter it;
     if data_check(train_test):  # check if the criteria is satisfied

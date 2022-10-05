@@ -148,6 +148,9 @@ class EvaluateAbilityToIdentifyTopTestSamples:
             # MSE(corectly identified tests in top 20%)
             mse_of_tests_top_pc = self.calculate_mse_top_tests_identified(top_tests_true, top_tests,
                                                                           final_estimate_of_y_and_Y)
+            mse_of_tests_better = self.calculate_mse_top_tests_identified(tests_better_than_top_train_true,
+                                                                          tests_better_than_top_train,
+                                                                          final_estimate_of_y_and_Y)
 
             # Correct Ratio for Y extremes
             top_x_pairs_true, bottom_x_pairs_true = self.find_x_extreme_pairs(self.y_true_all)
@@ -158,12 +161,13 @@ class EvaluateAbilityToIdentifyTopTestSamples:
 
             return [correct_ratio_exceeding_train, correct_ratio_top_of_dataset,
                     summation_ratio_at_5, summation_ratio_at_10,
-                    summation_ratio_at_20pc, mse_of_tests_top_pc,
+                    summation_ratio_at_20pc,
+                    mse_of_tests_top_pc, mse_of_tests_better,
                     correct_ratio_top_pairs, correct_ratio_bottom_pairs,
                     precision_top, recall_top, f1_top,
                     precision_better, recall_better, f1_better]
         else:
-            return [np.nan for _ in range(14)]
+            return [np.nan for _ in range(15)]
 
     @staticmethod
     def calculate_correct_ratio(top_samples_true, top_samples_pred):
