@@ -34,7 +34,8 @@ if __name__ == '__main__':
     chembl_info = pd.read_csv("input//chembl_datasets_info.csv")
     all_metrics = []
 
-
+    number_of_existing_results = 101
+    count = 0
     for file in range(len(chembl_info)):
         #  list_of_files_done: [data_CHEMBL3286(size, 1002; repetition rate: 0.04)]
         list_of_files = ["data_CHEMBL5071.csv", "data_CHEMBL229.csv", "data_CHEMBL4805.csv", "data_CHEMBL268.csv",
