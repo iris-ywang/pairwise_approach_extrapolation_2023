@@ -4,6 +4,7 @@ from itertools import permutations, product
 
 from pa_basics.all_pairs import paired_data
 from pa_basics.import_chembl_data import dataset
+from build_model import run_model
 
 
 def data_check(train_test):
@@ -112,17 +113,24 @@ def generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.
     train_test_data = {}
     train_test_splits = train_test_ids_wrt_step_size(train_test, step_size)
     n_fold = 0
+    metrics = []
     for train_ids, test_ids in train_test_splits:
+        print("Generating datasets...")
+        start = time.time()
         train_test_data_per_fold = {'train_ids': train_ids, 'test_ids': test_ids, 'train_set': train_test[train_ids],
                                     'test_set': train_test[test_ids], 'y_true': y_true}
 
         # a dict of different types of pairs and their samples IDs
         pairs_data = train_test_split(pairs, train_ids, test_ids)
         train_test_data[n_fold] = {**train_test_data_per_fold, **pairs_data}
+        print(":::Time used: ", time.time() - start)
 
-        n_fold += 1
-
-    return train_test_data
+        print("Running models...")
+        start = time.time()
+        metric = run_model(train_test_data, percentage_of_top_samples=0.1)
+        print(":::Time used: ", time.time() - start, "\n")
+        metrics.append(metric[0])
+    return metrics
 
 
 def train_test_ids_wrt_step_size(train_test, step_size):
