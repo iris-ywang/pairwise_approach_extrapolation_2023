@@ -41,7 +41,7 @@ if __name__ == '__main__':
         list_of_files = ["data_CHEMBL5071.csv", "data_CHEMBL229.csv", "data_CHEMBL4805.csv", "data_CHEMBL268.csv",
                          "data_CHEMBL283.csv"]
         # a list of low repetition rate
-        if chembl_info["File name"][file] in list_of_files: continue
+        if chembl_info["File name"][file] not in list_of_files: continue
 
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         print("On Dataset No.", count, ", ", chembl_info["File name"][file])
