@@ -37,8 +37,9 @@ if __name__ == '__main__':
     number_of_existing_results = 101
     count = 0
     for file in range(len(chembl_info)):
-        #  list_of_files_done: [data_CHEMBL3286(size, 1002; repetition rate: 0.04)]
-        list_of_files = ["data_CHEMBL5071.csv", "data_CHEMBL229.csv", "data_CHEMBL4805.csv", "data_CHEMBL268.csv",
+        #  list_of_files_done: [data_CHEMBL3286(size, 1002; repetition rate: 0.04),
+        #  "data_CHEMBL5071.csv",]
+        list_of_files = [ "data_CHEMBL229.csv", "data_CHEMBL4805.csv", "data_CHEMBL268.csv",
                          "data_CHEMBL283.csv"]
         # a list of low repetition rate
         if chembl_info["File name"][file] not in list_of_files: continue
@@ -51,5 +52,5 @@ if __name__ == '__main__':
         # metrics = run_model(data, percentage_of_top_samples=0.1)
 
         all_metrics.append(metrics)
-        np.save("extrapolation_increase_train_size_run2.npy", np.array(all_metrics))
+        np.save("extrapolation_increase_train_size_run3.npy", np.array(all_metrics))
 
