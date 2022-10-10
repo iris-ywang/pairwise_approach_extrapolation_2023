@@ -107,12 +107,12 @@ def generate_train_test_sets(train_test, fold, with_similarity=False, with_fp=Fa
     return train_test_data
 
 
-def generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.1, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
+def generate_train_test_sets_with_K_fold_forward(train_test, folds=5, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
     y_true = np.array(train_test[:, 0])
     pairs = paired_data(train_test, with_similarity, with_fp, only_fp, multiple_tanimoto)
 
     train_test_data = {}
-    train_test_splits = train_test_ids_wrt_step_size(train_test, step_size)
+    train_test_splits = k_fold_forward_cv(train_test, folds)
     n_fold = 0
     metrics = []
     for train_ids, test_ids in train_test_splits:
@@ -132,6 +132,21 @@ def generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.
         print(":::Time used: ", time.time() - start, "\n")
         metrics.append(metric[0])
     return metrics
+
+
+def k_fold_forward_cv(sorted_train_test, folds):
+    total_samples = len(sorted_train_test)
+    sample_ids = list(range(total_samples))
+    fold_size = int( total_samples / folds )
+    train_test_splits = []
+    for fold in range(1, folds):
+        train_ids = sample_ids[:fold_size * fold]
+        if fold != (folds - 1):
+            test_ids = sample_ids[fold_size * fold : fold_size * (fold+1)]
+        else:
+            test_ids = list(set(sample_ids) - set(train_ids))
+        train_test_splits.append((train_ids, test_ids))
+    return train_test_splits
 
 
 def train_test_ids_wrt_step_size(train_test, step_size):

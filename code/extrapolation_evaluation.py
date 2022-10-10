@@ -100,7 +100,7 @@ class EvaluateAbilityToIdentifyTopTestSamples:
     def estimate_precision_recall(self, top_tests_true, top_tests):
         test_samples_boolean_true = [0 for _ in range(len(self.test_ids))]
         for top_test_id_true in top_tests_true:
-            position_in_test_ids = int(np.where(self.test_ids == top_test_id_true)[0])
+            position_in_test_ids = self.test_ids.index(top_test_id_true)
             test_samples_boolean_true[position_in_test_ids] = 1
 
         test_samples_boolean_pred = [0 for _ in range(len(self.test_ids))]

@@ -5,7 +5,7 @@ import time
 import warnings
 
 from pa_basics.import_chembl_data import dataset
-from split_data import generate_train_test_sets_with_increasing_train_size
+from split_data import generate_train_test_sets_with_K_fold_forward
 from build_model import run_model
 
 
@@ -37,20 +37,17 @@ if __name__ == '__main__':
     number_of_existing_results = 101
     count = 0
     for file in range(len(chembl_info)):
-        #  list_of_files_done: [data_CHEMBL3286(size, 1002; repetition rate: 0.04),
-        #  "data_CHEMBL5071.csv",]
-        list_of_files = [ "data_CHEMBL229.csv", "data_CHEMBL4805.csv", "data_CHEMBL268.csv",
-                         "data_CHEMBL283.csv"]
-        # a list of low repetition rate
-        if chembl_info["File name"][file] not in list_of_files: continue
+        if chembl_info["Repetition Rate"][file] > 0.15: continue
+        if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
 
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         print("On Dataset No.", count, ", ", chembl_info["File name"][file])
         connection = "/input/qsar_data_unsorted/"
         train_test = dataset(os.getcwd() + connection + chembl_info["File name"][file], shuffle_state=1)
-        metrics = generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.1)
+        sorted_train_test = train_test[train_test[:,0].argsort()]
+        metrics = generate_train_test_sets_with_K_fold_forward(sorted_train_test, folds=10)
         # metrics = run_model(data, percentage_of_top_samples=0.1)
 
         all_metrics.append(metrics)
-        np.save("extrapolation_increase_train_size_run3.npy", np.array(all_metrics))
+        np.save("extrapolation_validation_xiong_run1.npy", np.array(all_metrics))
 
