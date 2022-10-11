@@ -34,10 +34,9 @@ if __name__ == '__main__':
     chembl_info = pd.read_csv("input//chembl_datasets_info.csv")
     all_metrics = []
 
-    number_of_existing_results = 101
-    count = 0
+
     for file in range(len(chembl_info)):
-        if chembl_info["Repetition Rate"][file] > 0.15: continue
+        if chembl_info["Repetition Rate"][file] > 0.1: continue
         if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
 
         # TODO: may need to change the way of getting parent directory if this does not work on windows

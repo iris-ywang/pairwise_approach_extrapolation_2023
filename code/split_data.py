@@ -53,24 +53,23 @@ def train_test_split(pairs, train_ids, test_ids):
     :return: a dict of different types of pairs. It contains the info for samples IDs for pairs, and feature and target
              values for them.
     """
-    train_pairs = dict(pairs)
+    all_pairs = dict(pairs)
+    train_pairs = []
     c2_test_pairs = []
     c3_test_pairs = []
+    c1_keys_del = list(permutations(train_ids, 2)) + [(a, a) for a in train_ids]
     c2_keys_del = pair_test_with_train(train_ids, test_ids)
     c3_keys_del = list(permutations(test_ids, 2)) + [(a, a) for a in test_ids]
 
+    for key in c1_keys_del:
+        train_pairs.append(all_pairs.pop(key))
     for key in c2_keys_del:
-        c2_test_pairs.append(train_pairs.pop(key))
+        c2_test_pairs.append(all_pairs.pop(key))
     for key in c3_keys_del:
-        c3_test_pairs.append(train_pairs.pop(key))
+        c3_test_pairs.append(all_pairs.pop(key))
+    train_pairs = np.array(train_pairs)
     c2_test_pairs = np.array(c2_test_pairs)
     c3_test_pairs = np.array(c3_test_pairs)
-
-    c1_keys_del, trainp = [], []
-    for a, b in train_pairs.items():
-        c1_keys_del.append(a)
-        trainp.append(b)
-    train_pairs = np.array(trainp)
 
     return {'train_pairs': train_pairs,
             'train_pair_ids': c1_keys_del,
@@ -118,8 +117,9 @@ def generate_train_test_sets_with_K_fold_forward(train_test, folds=5, with_simil
     for train_ids, test_ids in train_test_splits:
         print("Generating datasets...")
         start = time.time()
+        y_true_subset = np.array(train_test[:, 0][train_ids + test_ids])
         train_test_data_per_fold = {'train_ids': train_ids, 'test_ids': test_ids, 'train_set': train_test[train_ids],
-                                    'test_set': train_test[test_ids], 'y_true': y_true}
+                                    'test_set': train_test[test_ids], "y_true_all": y_true, 'y_true': y_true_subset}
 
         # a dict of different types of pairs and their samples IDs
         pairs_data = train_test_split(pairs, train_ids, test_ids)

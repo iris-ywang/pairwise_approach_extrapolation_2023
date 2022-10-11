@@ -85,7 +85,7 @@ def performance_standard_approach(all_data, percentage_of_top_samples):
     y_pred_all = np.array(all_data["y_true"])
     y_pred_all[all_data["test_ids"]] = y_SA
 
-    metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
+    metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples,
                                                       y_pred_all, all_data).run_evaluation()
     metrics_original = metrics_evaluation(all_data["test_set"][:, 0], y_SA)
     return metrics + metrics_original
@@ -107,7 +107,7 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples):
     Y_c2_sign_and_abs_predictions = dict(zip(all_data["c2_test_pair_ids"], np.array([Y_pa_c2_abs, Y_pa_c2_sign]).T))
     y_ranking = rating_trueskill(Y_pa_c2_sign, all_data["c2_test_pair_ids"], all_data["y_true"])
 
-    metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
+    metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples,
                                                       y_ranking, all_data).run_evaluation(Y_c2_sign_and_abs_predictions)
     Y_pa_c2 = np.sign(pairwise_differences_for_standard_approach(all_data, y_ranking)) * Y_pa_c2_abs
     y_EstimateFromRankNDistance = estimate_y_from_averaging(Y_pa_c2, all_data['c2_test_pair_ids'], all_data['test_ids'],
