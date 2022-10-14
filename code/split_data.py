@@ -109,7 +109,7 @@ def generate_train_test_sets(train_test, fold, with_similarity=False, with_fp=Fa
 
 def generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.1, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
     y_true = np.array(train_test[:, 0])
-    pairs = paired_data(train_test, with_similarity, with_fp, only_fp, multiple_tanimoto)
+    # pairs = paired_data(train_test, with_similarity, with_fp, only_fp, multiple_tanimoto)
 
     train_test_data = {}
     train_test_splits = train_test_ids_wrt_step_size(train_test, step_size)
@@ -117,6 +117,7 @@ def generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.
     metrics = []
     for train_ids, test_ids in train_test_splits:
         print("Generating datasets...")
+        pairs = paired_data(train_test, train_ids, test_ids, with_similarity, with_fp, only_fp, multiple_tanimoto)
         start = time.time()
         train_test_data_per_fold = {'train_ids': train_ids, 'test_ids': test_ids, 'train_set': train_test[train_ids],
                                     'test_set': train_test[test_ids], 'y_true': y_true}

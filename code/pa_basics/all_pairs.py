@@ -3,15 +3,28 @@ Create all pairs
 """
 
 import numpy as np
-from itertools import permutations
+from itertools import permutations, product
 import multiprocessing
 from sklearn.metrics import jaccard_score
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances, manhattan_distances
-
 from scipy.spatial.distance import dice, yule, kulsinski, sokalmichener
 
 
-def paired_data(data, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
+def pair_test_with_train(train_ids, test_ids):
+    """
+    Generate C2-type pairs (test samples pairing with train samples)
+    :param train_ids: list of int for training sample IDs
+    :param test_ids: list of int for test sample IDs
+    :return: list of tuples of sample IDs
+    """
+    c2test_combs = []
+    for comb in product(test_ids, train_ids):
+        c2test_combs.append(comb)
+        c2test_combs.append(comb[::-1])
+    return c2test_combs
+
+
+def paired_data(data, train_ids=None, test_ids=None, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
     """
     Generate all possible pairs from a QSAR dataset
 
@@ -21,11 +34,36 @@ def paired_data(data, with_similarity=False, with_fp=False, only_fp=False, multi
     :param with_fp: bool - if true, the pairwise features include original samples' FP
     :return: a dict - keys = (ID_a, ID_b); values = [Y_ab, X1, X2, ...Xn]
     """
-    pairing_tool = PairingDataset(data, with_similarity, with_fp, only_fp, multiple_tanimoto)
+    if train_ids is None and test_ids is None:
+        pairing_tool = PairingDataset(data, with_similarity, with_fp, only_fp, multiple_tanimoto)
+    else:
+        pairing_tool = PairingSpecificDataset(data, train_ids, test_ids, with_similarity, with_fp, only_fp, multiple_tanimoto)
 
     with multiprocessing.Pool() as executor:
         results = executor.map(pairing_tool.parallelised_pairing_process, range(pairing_tool.n_combinations))
     return dict(results)
+
+
+class PairingSpecificDataset:
+    def __init__(self, data, train_ids, test_ids, with_similarity, with_fp, only_fp, multiple_tanimoto):
+        self.data = data
+        self.feature_variation = [with_similarity, with_fp, only_fp, multiple_tanimoto]
+
+        self.n_samples, self.n_columns = np.shape(data)
+        self.train_ids, self.test_ids = train_ids, test_ids
+        self.permutation_pairs = list(permutations(self.train_ids, 2)) + [(a, a) for a in self.train_ids] \
+                              + list(pair_test_with_train(self.train_ids, self.test_ids)) \
+                              + list(permutations(self.test_ids, 2)) + [(a, a) for a in self.test_ids]
+
+        self.n_combinations = len(self.permutation_pairs)
+
+    def parallelised_pairing_process(self, combination_id):
+        sample_id_a, sample_id_b = self.permutation_pairs[combination_id]
+        sample_a = self.data[sample_id_a: sample_id_a + 1, :]
+        sample_b = self.data[sample_id_b: sample_id_b + 1, :]
+
+        pair_ab = pair_2samples(self.n_columns, sample_a, sample_b, self.feature_variation)
+        return (sample_id_a, sample_id_b), pair_ab
 
 
 class PairingDataset:
