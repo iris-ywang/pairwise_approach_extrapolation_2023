@@ -48,7 +48,7 @@ if __name__ == '__main__':
         print("On Dataset No.", count, ", ", chembl_info["File name"][file])
         connection = "/input/qsar_data_unsorted/"
         train_test = dataset(os.getcwd() + connection + chembl_info["File name"][file], shuffle_state=1)
-        metrics = generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.1)
+        metrics = generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.03)
         # metrics = run_model(data, percentage_of_top_samples=0.1)
 
         all_metrics.append(metrics)

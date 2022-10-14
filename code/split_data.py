@@ -139,15 +139,15 @@ def train_test_ids_wrt_step_size(train_test, step_size):
     total_samples = len(train_test)
     part_size = int( total_samples * step_size )
     sample_ids = list(range(total_samples))
-    steps = int(1 // step_size)
+    steps = int(0.2 // step_size)
     train_test_splits = []
-
-    smaller_steps = 3
-    smaller_part_size = int(part_size / smaller_steps)
-    for smaller_step in range(1, smaller_steps):
-        train_ids = sample_ids[:smaller_part_size * smaller_step]
-        test_ids = list(set(sample_ids) - set(train_ids))
-        train_test_splits.append((train_ids, test_ids))
+    #
+    # smaller_steps = 3
+    # smaller_part_size = int(part_size / smaller_steps)
+    # for smaller_step in range(1, smaller_steps * 2):
+    #     train_ids = sample_ids[:smaller_part_size * smaller_step]
+    #     test_ids = list(set(sample_ids) - set(train_ids))
+    #     train_test_splits.append((train_ids, test_ids))
 
     for step in range(1, steps+1):
         train_ids = sample_ids[:part_size * step]
