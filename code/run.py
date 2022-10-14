@@ -31,7 +31,7 @@ def load_datasets():
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
 
-    chembl_info = pd.read_csv("input//chembl_datasets_info.csv")
+    # chembl_info = pd.read_csv("input//chembl_datasets_info.csv")
     all_metrics = []
 
     number_of_existing_results = 101
@@ -45,9 +45,9 @@ if __name__ == '__main__':
 
 
         # TODO: may need to change the way of getting parent directory if this does not work on windows
-        print("On Dataset No.", count, ", ", chembl_info["File name"][file])
+        print("On Dataset No.", count, ", ", file)
         connection = "/input/qsar_data_unsorted/"
-        train_test = dataset(os.getcwd() + connection + chembl_info["File name"][file], shuffle_state=1)
+        train_test = dataset(os.getcwd() + connection + file, shuffle_state=1)
         metrics = generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.03)
         # metrics = run_model(data, percentage_of_top_samples=0.1)
 
