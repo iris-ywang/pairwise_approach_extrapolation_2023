@@ -127,11 +127,20 @@ def generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.
         train_test_data[n_fold] = {**train_test_data_per_fold, **pairs_data}
         print(":::Time used: ", time.time() - start)
 
+        print("Size of train set: %s \n "
+              "Size of test set: %s \n"
+              "Size of train pairs: %s \n "
+              "Size of c2 test pairs: %s " %(len(train_test_data_per_fold["train_ids"]),
+                                             len(train_test_data_per_fold["test_ids"]),
+                                             len(pairs_data["train_pair_ids"]),
+                                             len(pairs_data["c2_test_pair_ids"])))
+
         print("Running models...")
         start = time.time()
         metric = run_model(train_test_data, percentage_of_top_samples=0.1)
         print(":::Time used: ", time.time() - start, "\n")
         metrics.append(metric[0])
+        np.save("extrapolation_increase_train_size_temporary.npy", np.array(metrics))
     return metrics
 
 

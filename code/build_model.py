@@ -119,10 +119,7 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples):
 def run_model(data, percentage_of_top_samples):
     metrics = []
     for outer_fold, datum in data.items():
-        start = time.time()
         metric_sa = performance_standard_approach(datum, percentage_of_top_samples)
         metric_pa = performance_pairwise_approach(datum, percentage_of_top_samples)
         metrics.append([metric_sa, metric_pa])
-        print("::::::Time used for Fold", outer_fold, ": ", time.time() - start, "\n")
-        np.save("extrapolation_increase_train_size_temporary.npy", np.array(metrics))
     return metrics
