@@ -38,7 +38,7 @@ if __name__ == '__main__':
     count = 0
     for file in range(len(chembl_info)):
         if chembl_info["Repetition Rate"][file] > 0.1: continue
-        if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
+        if chembl_info["N(sample)"][file] > 500 or chembl_info["N(sample)"][file] < 300: continue
 
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         print("On Dataset No.", count, ", ", chembl_info["File name"][file])
@@ -49,5 +49,5 @@ if __name__ == '__main__':
         # metrics = run_model(data, percentage_of_top_samples=0.1)
 
         all_metrics.append(metrics)
-        np.save("extrapolation_validation_xiong_run1.npy", np.array(all_metrics))
+        np.save("extrapolation_validation_xiong_run2.npy", np.array(all_metrics))
 
