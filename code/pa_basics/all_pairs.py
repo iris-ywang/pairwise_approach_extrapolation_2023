@@ -52,8 +52,8 @@ class PairingSpecificDataset:
         self.n_samples, self.n_columns = np.shape(data)
         self.train_ids, self.test_ids = train_ids, test_ids
         self.permutation_pairs = list(permutations(self.train_ids, 2)) + [(a, a) for a in self.train_ids] \
-                              + list(pair_test_with_train(self.train_ids, self.test_ids)) \
-                              + list(permutations(self.test_ids, 2)) + [(a, a) for a in self.test_ids]
+                              + list(pair_test_with_train(self.train_ids, self.test_ids))
+                              # + list(permutations(self.test_ids, 2)) + [(a, a) for a in self.test_ids]
 
         self.n_combinations = len(self.permutation_pairs)
 

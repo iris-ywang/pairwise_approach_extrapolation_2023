@@ -57,14 +57,14 @@ def train_test_split(pairs, train_ids, test_ids):
     c2_test_pairs = []
     c3_test_pairs = []
     c2_keys_del = pair_test_with_train(train_ids, test_ids)
-    c3_keys_del = list(permutations(test_ids, 2)) + [(a, a) for a in test_ids]
+    # c3_keys_del = list(permutations(test_ids, 2)) + [(a, a) for a in test_ids]
 
     for key in c2_keys_del:
         c2_test_pairs.append(train_pairs.pop(key))
-    for key in c3_keys_del:
-        c3_test_pairs.append(train_pairs.pop(key))
+    # for key in c3_keys_del:
+    #     c3_test_pairs.append(train_pairs.pop(key))
     c2_test_pairs = np.array(c2_test_pairs)
-    c3_test_pairs = np.array(c3_test_pairs)
+    # c3_test_pairs = np.array(c3_test_pairs)
 
     c1_keys_del, trainp = [], []
     for a, b in train_pairs.items():
@@ -75,9 +75,9 @@ def train_test_split(pairs, train_ids, test_ids):
     return {'train_pairs': train_pairs,
             'train_pair_ids': c1_keys_del,
             'c2_test_pairs': c2_test_pairs,
-            'c2_test_pair_ids': c2_keys_del,
-            'c3_test_pairs': c3_test_pairs,
-            'c3_test_pair_ids': c3_keys_del}
+            'c2_test_pair_ids': c2_keys_del}
+            # 'c3_test_pairs': c3_test_pairs
+            # 'c3_test_pair_ids': c3_keys_del}
 
 
 def generate_train_test_sets(train_test, fold, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):

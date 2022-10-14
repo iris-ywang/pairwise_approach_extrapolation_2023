@@ -130,12 +130,12 @@ class EvaluateAbilityToIdentifyTopTestSamples:
             precision_better, recall_better, f1_better = self.estimate_precision_recall(tests_better_than_top_train_true,
                                                                                         tests_better_than_top_train)
             # Summation Ratio:
-            self.x = 5 if len(top_tests_true) >= 5 else len(top_tests_true)
+            self.x = 5 if len(self.test_ids) >= 5 else len(test_ids)
             sum_y_true_of_pred_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_pred_all)
             sum_y_true_of_true_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_true_all)
             summation_ratio_at_5 = sum_y_true_of_pred_top_test / sum_y_true_of_true_top_test
 
-            self.x = 10 if len(top_tests_true) >= 5 else len(top_tests_true)
+            self.x = 10 if len(self.test_ids) >= 10 else len(self.test_ids)
             sum_y_true_of_pred_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_pred_all)
             sum_y_true_of_true_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_true_all)
             summation_ratio_at_10 = sum_y_true_of_pred_top_test / sum_y_true_of_true_top_test

@@ -52,5 +52,5 @@ if __name__ == '__main__':
         # metrics = run_model(data, percentage_of_top_samples=0.1)
 
         all_metrics.append(metrics)
-        np.save("extrapolation_increase_train_size_run3.npy", np.array(all_metrics))
+        np.save("extrapolation_increase_train_size_run4.npy", np.array(all_metrics))
 
