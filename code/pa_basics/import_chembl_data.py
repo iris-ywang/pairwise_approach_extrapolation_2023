@@ -23,10 +23,10 @@ def import_data(filename, shuffle_state):
     """
     df = pd.read_csv(filename)
     try:
-        data = pd.DataFrame(data=df).to_numpy().astype(np.float64)
+        data = pd.DataFrame(data=df).to_numpy().astype(np.float16)
     except:
         del df['molecule_id']
-        data = pd.DataFrame(data=df).to_numpy().astype(np.float64)
+        data = pd.DataFrame(data=df).to_numpy().astype(np.float16)
 
     if shuffle_state is not None:
         data = shuffle(data, random_state=shuffle_state)

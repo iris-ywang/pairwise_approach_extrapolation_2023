@@ -4,13 +4,13 @@ Test dataset: 20 samples, 17 features
 """
 
 from pa_basics.import_chembl_data import dataset
-from split_data import generate_train_test_sets
+from split_data import generate_train_test_sets_ids
 from build_model import run_model
 
 if __name__ == '__main__':
     file = 'test_case.csv'
     train_test = dataset(file, shuffle_state=1)  # No shuffling of dataset
     # Test dataset is too small to pass the data_check(), so this step is skipped.
-    data = generate_train_test_sets(train_test)
+    data = generate_train_test_sets_ids(train_test, fold=10)
     metrics = run_model(data)
     print('Finished')

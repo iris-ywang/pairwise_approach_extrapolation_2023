@@ -16,7 +16,7 @@ from scipy.stats import spearmanr, kendalltau
 
 
 
-def rating_trueskill(comparison_results_lst, test_combs_lst, y_true, train_ids):
+def rating_trueskill(comparison_results_lst, test_combs_lst, y_true):
     nsamples = len(y_true)
     ncomparisons = len(comparison_results_lst)
     ranking = [Rating() for _ in range(nsamples)]
