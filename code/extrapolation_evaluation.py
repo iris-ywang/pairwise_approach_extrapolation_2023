@@ -43,25 +43,31 @@ class EvaluateAbilityToIdentifyTopTestSamples:
 
     def find_top_test_ids(self, y_pred_all, Y_sign_and_abs_predictions=None):
         # trains == train samples; tests == test samples.
-
+        indice = self.train_ids + self.test_ids
+        y_pred_all = y_pred_all[indice]
         overall_orders = np.argsort(-y_pred_all)  # a list of sample IDs in the descending order of activity values
-        top_trains_and_tests = overall_orders[0: int(self.pc * len(overall_orders))]
+        ordered_indice = np.array(indice)[list(overall_orders)]
+        top_trains_and_tests = ordered_indice[0: int(self.pc * len(overall_orders))]
         top_tests = [idx for idx in top_trains_and_tests if idx in self.test_ids]
+
+        # The following is assuming that train + test == whole
+        # top_trains_and_tests = overall_orders[0: int(self.pc * len(overall_orders))]
+        # top_tests = [idx for idx in top_trains_and_tests if idx in self.test_ids]
 
         # Find the ID of top train sample in the overall_order
         top_train_order_position = 0
         while True:
-            if overall_orders[top_train_order_position] in self.train_ids: break
+            if ordered_indice[top_train_order_position] in self.train_ids: break
             top_train_order_position += 1
-        top_train_id = overall_orders[top_train_order_position]
+        top_train_id = ordered_indice[top_train_order_position]
 
-        tests_better_than_top_train = list(overall_orders[:top_train_order_position])
+        tests_better_than_top_train = list(ordered_indice[:top_train_order_position])
 
         if Y_sign_and_abs_predictions is None:
             final_estimate_of_y_and_delta_y = None
         else:
             final_estimate_of_y_and_delta_y = self.estimate_y_from_final_ranking_and_absolute_Y(
-                top_tests, tests_better_than_top_train, top_train_id, overall_orders, Y_sign_and_abs_predictions
+                top_tests, tests_better_than_top_train, top_train_id, ordered_indice, Y_sign_and_abs_predictions
             )
         return top_tests, tests_better_than_top_train, top_train_id, final_estimate_of_y_and_delta_y
 
@@ -130,7 +136,7 @@ class EvaluateAbilityToIdentifyTopTestSamples:
             precision_better, recall_better, f1_better = self.estimate_precision_recall(tests_better_than_top_train_true,
                                                                                         tests_better_than_top_train)
             # Summation Ratio:
-            self.x = 5 if len(self.test_ids) >= 5 else len(test_ids)
+            self.x = 5 if len(self.test_ids) >= 5 else len(self.test_ids)
             sum_y_true_of_pred_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_pred_all)
             sum_y_true_of_true_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_true_all)
             summation_ratio_at_5 = sum_y_true_of_pred_top_test / sum_y_true_of_true_top_test

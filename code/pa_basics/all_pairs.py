@@ -147,3 +147,37 @@ def similarity_metrics(fp1, fp2):
         yule(fp1, fp2),
         sokalmichener(fp1, fp2)
     ]
+
+
+def paired_data_by_pair_id(data, pair_ids, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
+    """
+    Generate all possible pairs from a QSAR dataset
+    :param only_fp: bool - if true, the pairwise features only contains original samples' FP
+    :param data: np.array of all samples (train_test) - [y, x1, x2, ..., xn]
+    :param with_similarity: bool - if true, the pairwise features include pairwise similarity measures
+    :param with_fp: bool - if true, the pairwise features include original samples' FP
+    :return: a dict - keys = (ID_a, ID_b); values = [Y_ab, X1, X2, ...Xn]
+    """
+    pairing_tool = PairingDatasetByPairID(data, pair_ids, with_similarity, with_fp, only_fp, multiple_tanimoto)
+
+    with multiprocessing.Pool(processes=16) as executor:
+        results = executor.map(pairing_tool.parallelised_pairing_process, range(pairing_tool.n_combinations))
+    return np.array([values for _, values in dict(results).items()])
+
+
+class PairingDatasetByPairID:
+    def __init__(self, data, pair_ids, with_similarity, with_fp, only_fp, multiple_tanimoto):
+        self.data = data
+        self.feature_variation = [with_similarity, with_fp, only_fp, multiple_tanimoto]
+
+        self.n_samples, self.n_columns = np.shape(data)
+        self.permutation_pairs = pair_ids
+        self.n_combinations = len(self.permutation_pairs)
+
+    def parallelised_pairing_process(self, combination_id):
+        sample_id_a, sample_id_b = self.permutation_pairs[combination_id]
+        sample_a = self.data[sample_id_a: sample_id_a + 1, :]
+        sample_b = self.data[sample_id_b: sample_id_b + 1, :]
+
+        pair_ab = pair_2samples(self.n_columns, sample_a, sample_b, self.feature_variation)
+        return (sample_id_a, sample_id_b), pair_ab

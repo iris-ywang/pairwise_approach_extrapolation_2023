@@ -6,6 +6,7 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, n
 from scipy.stats import spearmanr, kendalltau
 from extrapolation_evaluation import EvaluateAbilityToIdentifyTopTestSamples
 from pa_basics.rating import rating_trueskill
+from pa_basics.all_pairs import paired_data_by_pair_id
 
 
 def build_ml_model(model, train_data, test_data=None):
@@ -91,18 +92,98 @@ def performance_standard_approach(all_data, percentage_of_top_samples):
     return metrics + metrics_original
 
 
+def train_sign_and_abs_by_batch(all_data, batch_size=100000, c2=True, c3=True):
+    runs_of_estimators = len(all_data["train_pair_ids"]) // batch_size
+
+    if runs_of_estimators < 1:
+        train_pairs_batch = paired_data_by_pair_id(all_data["train_test"], all_data['train_pair_ids'])
+
+        train_pairs_for_sign = np.array(train_pairs_batch)
+        train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
+        rfc = RandomForestClassifier(n_jobs=16, random_state=1)
+        rfc = build_ml_model(rfc, train_pairs_for_sign)
+
+        train_pairs_for_abs = np.absolute(train_pairs_batch)
+        rfr = RandomForestRegressor(n_jobs=16, random_state=1)
+        rfr = build_ml_model(rfr, train_pairs_for_abs)
+
+    else:
+
+        for run in range(runs_of_estimators + 1):
+            if run < runs_of_estimators:
+                train_ids_per_batch = all_data["train_pair_ids"][run * batch_size: (run + 1) * batch_size]
+
+            else:
+                train_ids_per_batch = all_data["train_pair_ids"][run * batch_size:]
+
+            train_pairs_batch = paired_data_by_pair_id(all_data["train_test"], train_ids_per_batch)
+
+            train_pairs_for_sign = np.array(train_pairs_batch)
+            train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
+            rfc = RandomForestClassifier(n_jobs=16, random_state=1, warm_start=True)
+            rfc = build_ml_model(rfc, train_pairs_for_sign)
+
+            train_pairs_for_abs = np.absolute(train_pairs_batch)
+            rfr = RandomForestRegressor(n_jobs=16, random_state=1, warm_start=True)
+            rfr = build_ml_model(rfr, train_pairs_for_abs)
+
+            rfc.n_estimators += 100
+            rfr.n_estimators += 100
+
+    if c2:
+        c2_test_pair_ids = all_data["c2_test_pair_ids"]
+        number_test_batches = len(c2_test_pair_ids) // batch_size
+        if number_test_batches < 1: number_test_batches = 0
+        Y_pa_c2_sign, Y_pa_c2_dist = [], []
+        Y_pa_c2_true = []
+        for test_batch in range(number_test_batches + 1):
+            if test_batch != number_test_batches + 1:
+                test_pair_id_batch = c2_test_pair_ids[
+                                     test_batch * batch_size: (test_batch + 1) * batch_size]
+            else:
+                test_pair_id_batch = c2_test_pair_ids[test_batch * batch_size:]
+            test_pairs_batch = paired_data_by_pair_id(all_data["train_test"], test_pair_id_batch)
+            Y_pa_c2_sign += list(rfc.predict(test_pairs_batch[:, 1:]))
+            Y_pa_c2_dist += list(rfr.predict(np.absolute(test_pairs_batch[:, 1:])))
+            Y_pa_c2_true += list(test_pairs_batch[:, 0])
+    else:
+        Y_pa_c2_sign, Y_pa_c2_dist, Y_pa_c2_true = None, None, None
+
+    if c3:
+        c3_test_pair_ids = all_data["c2_test_pair_ids"]
+        number_test_batches = len(c3_test_pair_ids) // batch_size
+        if number_test_batches < 1: number_test_batches = 0
+        Y_pa_c3_sign, Y_pa_c3_dist = [], []
+        Y_pa_c3_true = []
+        for test_batch in range(number_test_batches + 1):
+            if test_batch != number_test_batches + 1:
+                test_pair_id_batch = c3_test_pair_ids[
+                                     test_batch * batch_size: (test_batch + 1) * batch_size]
+            else:
+                test_pair_id_batch = c3_test_pair_ids[test_batch * batch_size:]
+            test_pairs_batch = paired_data_by_pair_id(all_data["train_test"], test_pair_id_batch)
+            Y_pa_c3_sign += list(rfc.predict(test_pairs_batch[:, 1:]))
+            Y_pa_c3_dist += list(rfc.predict(np.absolute(test_pairs_batch[:, 1:])))
+            Y_pa_c3_true += list(test_pairs_batch[:, 0])
+    else:
+        Y_pa_c3_sign, Y_pa_c3_dist, Y_pa_c3_true = None, None, None
+    return Y_pa_c2_sign, Y_pa_c2_dist, Y_pa_c2_true, Y_pa_c3_sign, Y_pa_c3_dist, Y_pa_c3_true
+
+
 def performance_pairwise_approach(all_data, percentage_of_top_samples):
     # regression on pairs of FP for C2 and C3 type test pairs
     # _, Y_pa_c2 = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), all_data['train_pairs'], all_data['c2_test_pairs'])
     # _, Y_pa_c3 = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), all_data['train_pairs'], all_data['c3_test_pairs'])
 
-    train_pairs_for_sign = np.array(all_data["train_pairs"])
-    train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
-    _, Y_pa_c2_sign = build_ml_model(RandomForestClassifier(n_jobs=-1, random_state=1), train_pairs_for_sign, all_data['c2_test_pairs'])
-
-    train_pairs_for_abs = np.absolute(all_data["train_pairs"])
-    c2_test_pairs_for_abs = np.absolute(all_data['c2_test_pairs'])
-    _, Y_pa_c2_abs = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), train_pairs_for_abs, c2_test_pairs_for_abs)
+    Y_pa_c2_sign, Y_pa_c2_abs, Y_pa_c2_true, Y_pa_c3_sign, Y_pa_c3_abs, Y_pa_c3_true = \
+        train_sign_and_abs_by_batch(all_data, c3=False)
+    # train_pairs_for_sign = np.array(all_data["train_pairs"])
+    # train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
+    # _, Y_pa_c2_sign = build_ml_model(RandomForestClassifier(n_jobs=-1, random_state=1), train_pairs_for_sign, all_data['c2_test_pairs'])
+    #
+    # train_pairs_for_abs = np.absolute(all_data["train_pairs"])
+    # c2_test_pairs_for_abs = np.absolute(all_data['c2_test_pairs'])
+    # _, Y_pa_c2_abs = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), train_pairs_for_abs, c2_test_pairs_for_abs)
 
     Y_c2_sign_and_abs_predictions = dict(zip(all_data["c2_test_pair_ids"], np.array([Y_pa_c2_abs, Y_pa_c2_sign]).T))
     y_ranking = rating_trueskill(Y_pa_c2_sign, all_data["c2_test_pair_ids"], all_data["y_true"])

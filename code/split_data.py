@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.preprocessing import KBinsDiscretizer
 from itertools import permutations, product
 import time
 
@@ -107,40 +108,58 @@ def generate_train_test_sets(train_test, fold, with_similarity=False, with_fp=Fa
     return train_test_data
 
 
-def generate_train_test_sets_with_increasing_train_size(train_test, step_size=0.1, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
+def generate_train_test_sets_with_increasing_train_size(train_test, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
     y_true = np.array(train_test[:, 0])
+    n_samples = len(y_true)
     # pairs = paired_data(train_test, with_similarity, with_fp, only_fp, multiple_tanimoto)
 
     train_test_data = {}
-    train_test_splits = train_test_ids_wrt_step_size(train_test, step_size)
+    # left out 10% for test set
+    train_test_splits = StratifiedShuffleSplit(n_splits=1, test_size=0.1, random_state=1)
+
     n_fold = 0
     metrics = []
-    for train_ids, test_ids in train_test_splits:
-        print("Generating datasets...")
-        pairs = paired_data(train_test, train_ids, test_ids, with_similarity, with_fp, only_fp, multiple_tanimoto)
-        start = time.time()
+    binning = KBinsDiscretizer(n_bins=20, encode="ordinal", strategy="quantile")
+    y_bins = binning.fit_transform(train_test[:, 0:1])
+    for train_ids_all, test_ids in train_test_splits.split(train_test[:, 1:], y_bins):
+        train_ids_all = list(train_ids_all)
+        test_ids = list(test_ids)
+
+    # train_ids = list(np.random.choice(train_ids_all, int(0.05*n_samples), replace=False))
+    train_ids = train_ids_all[:int(0.05*n_samples)]
+    train_ids_pool = list(set(train_ids_all) - set(train_ids))
+    n_iterations = 50
+    count = 0
+    while count <= n_iterations:
+
+        c1_keys_del = list(permutations(train_ids, 2)) + [(a, a) for a in train_ids]
+        c2_keys_del = pair_test_with_train(train_ids, test_ids)
+        # c3_keys_del = list(permutations(test_ids, 2)) + [(a, a) for a in test_ids]
+        c3_keys_del = None
         train_test_data_per_fold = {'train_ids': train_ids, 'test_ids': test_ids, 'train_set': train_test[train_ids],
-                                    'test_set': train_test[test_ids], 'y_true': y_true}
-
-        # a dict of different types of pairs and their samples IDs
-        pairs_data = train_test_split(pairs, train_ids, test_ids)
-        train_test_data[n_fold] = {**train_test_data_per_fold, **pairs_data}
-        print(":::Time used: ", time.time() - start)
-
+                                    'test_set': train_test[test_ids], 'train_test': train_test,
+                                    'y_true': y_true, "train_pair_ids": c1_keys_del,
+                                    "c2_test_pair_ids": c2_keys_del, "c3_test_pair_ids": c3_keys_del}
+        train_test_data[n_fold] = train_test_data_per_fold
         print("Size of train set: %s \n "
               "Size of test set: %s \n"
               "Size of train pairs: %s \n "
               "Size of c2 test pairs: %s " %(len(train_test_data_per_fold["train_ids"]),
                                              len(train_test_data_per_fold["test_ids"]),
-                                             len(pairs_data["train_pair_ids"]),
-                                             len(pairs_data["c2_test_pair_ids"])))
+                                             len(train_test_data_per_fold["train_pair_ids"]),
+                                             len(train_test_data_per_fold["c2_test_pair_ids"])))
 
         print("Running models...")
         start = time.time()
         metric = run_model(train_test_data, percentage_of_top_samples=0.1)
         print(":::Time used: ", time.time() - start, "\n")
         metrics.append(metric[0])
+        count += 1
         np.save("extrapolation_increase_train_size_temporary.npy", np.array(metrics))
+        train_ids_new = train_ids_pool[:int(0.01 * n_samples)]
+        train_ids = train_ids + train_ids_new
+        train_ids_pool = list(set(train_ids_pool) - set(train_ids))
+
     return metrics
 
 
