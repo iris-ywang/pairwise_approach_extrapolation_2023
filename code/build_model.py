@@ -82,7 +82,7 @@ def metrics_evaluation(y_true, y_predict):
 
 
 def performance_standard_approach(all_data, percentage_of_top_samples):
-    _, y_SA = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), all_data['train_set'], all_data['test_set'])
+    _, y_SA = build_ml_model(RandomForestRegressor(n_jobs=16, random_state=1), all_data['train_set'], all_data['test_set'])
     y_pred_all = np.array(all_data["y_true"])
     y_pred_all[all_data["test_ids"]] = y_SA
 
