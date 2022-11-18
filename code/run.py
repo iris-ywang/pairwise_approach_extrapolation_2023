@@ -32,16 +32,18 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore")
 
     chembl_info = pd.read_csv("input//chembl_datasets_info.csv")
-    all_metrics = []
 
-    number_of_existing_results = 101
-    count = 0
+    try:
+        existing_results = np.load("extrapolation_active_learning_run2.npy")
+        count = len(existing_results)
+        all_metrics = list(existing_results)
+    except:
+        existing_results = None
+        count = 0
+        all_metrics = []
 
     for file in range(len(chembl_info)):
-        #  list_of_files_done: [data_CHEMBL3286(size, 1002; repetition rate: 0.04),
-        #  "data_CHEMBL5071.csv" size 1002, repetition 0.019,]
-        # a list of low repetition rate
-
+        count += 1
         if chembl_info["Repetition Rate"][file] > 0.5: continue
         if chembl_info["N(sample)"][file] > 1800 or chembl_info["N(sample)"][file] < 1000: continue
         # if chembl_info["File name"][file] in list_of_files: continue
@@ -53,5 +55,5 @@ if __name__ == '__main__':
         metrics = generate_train_test_sets_with_increasing_train_size(train_test)
 
         all_metrics.append(metrics)
-        np.save("extrapolation_active_learning_run1.npy", np.array(all_metrics))
+        np.save("extrapolation_active_learning_run2.npy", np.array(all_metrics))
 
