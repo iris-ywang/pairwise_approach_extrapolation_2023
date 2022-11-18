@@ -43,11 +43,10 @@ if __name__ == '__main__':
         all_metrics = []
 
     for file in range(len(chembl_info)):
-        count += 1
         if chembl_info["Repetition Rate"][file] > 0.5: continue
         if chembl_info["N(sample)"][file] > 1800 or chembl_info["N(sample)"][file] < 1000: continue
         # if chembl_info["File name"][file] in list_of_files: continue
-
+        count += 1
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         print("On Dataset No.", count, ", ", chembl_info["File name"][file])
         connection = "/input/qsar_data_unsorted/"
