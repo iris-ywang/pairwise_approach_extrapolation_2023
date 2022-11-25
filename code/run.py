@@ -56,7 +56,7 @@ if __name__ == '__main__':
         count += 1
         if count <= existing_count: continue
 
-        # print("On Dataset No." + str(count))
+        print("On Dataset No.", count, ", ", chembl_info["File name"][file])
 
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         connection = "/input/qsar_data_unsorted/"
@@ -68,6 +68,6 @@ if __name__ == '__main__':
         metrics = run_model(data, current_dataset_count=count)
         # print(":::Time used: ", time.time() - start, "\n")
 
-        new_results = np.concatenate((existing_results, metrics), axis=0)
-        np.save("PA_all_data_hpc.npy", np.array(new_results))
+        all_metrics.append(metrics)
+        np.save("PA_all_data_hpc.npy", np.array(all_metrics))
 
