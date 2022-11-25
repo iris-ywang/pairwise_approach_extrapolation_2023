@@ -82,7 +82,7 @@ def metrics_evaluation(y_true, y_predict):
 
 
 def performance_standard_approach(all_data, percentage_of_top_samples):
-    _, y_SA = build_ml_model(RandomForestRegressor(n_jobs=16, random_state=1), all_data['train_set'], all_data['test_set'])
+    _, y_SA = build_ml_model(RandomForestRegressor(n_jobs=5, random_state=1), all_data['train_set'], all_data['test_set'])
     y_pred_all = np.array(all_data["y_true"])
     y_pred_all[all_data["test_ids"]] = y_SA
 
@@ -100,11 +100,11 @@ def train_sign_and_abs_by_batch(all_data, batch_size=100000, c2=True, c3=True):
 
         train_pairs_for_sign = np.array(train_pairs_batch)
         train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
-        rfc = RandomForestClassifier(n_jobs=16, random_state=1)
+        rfc = RandomForestClassifier(n_jobs=5, random_state=1)
         rfc = build_ml_model(rfc, train_pairs_for_sign)
 
         train_pairs_for_abs = np.absolute(train_pairs_batch)
-        rfr = RandomForestRegressor(n_jobs=16, random_state=1)
+        rfr = RandomForestRegressor(n_jobs=5, random_state=1)
         rfr = build_ml_model(rfr, train_pairs_for_abs)
 
     else:
@@ -120,11 +120,11 @@ def train_sign_and_abs_by_batch(all_data, batch_size=100000, c2=True, c3=True):
 
             train_pairs_for_sign = np.array(train_pairs_batch)
             train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
-            rfc = RandomForestClassifier(n_jobs=16, random_state=1, warm_start=True)
+            rfc = RandomForestClassifier(n_jobs=5, random_state=1, warm_start=True)
             rfc = build_ml_model(rfc, train_pairs_for_sign)
 
             train_pairs_for_abs = np.absolute(train_pairs_batch)
-            rfr = RandomForestRegressor(n_jobs=16, random_state=1, warm_start=True)
+            rfr = RandomForestRegressor(n_jobs=5, random_state=1, warm_start=True)
             rfr = build_ml_model(rfr, train_pairs_for_abs)
 
             rfc.n_estimators += 100

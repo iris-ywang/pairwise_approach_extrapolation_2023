@@ -108,7 +108,9 @@ def generate_train_test_sets(train_test, fold, with_similarity=False, with_fp=Fa
     return train_test_data
 
 
-def generate_train_test_sets_with_increasing_train_size(train_test, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
+def generate_train_test_sets_with_increasing_train_size(train_test, current_dataset_count, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
+    temporary_file_dataset_count = int(np.load("temporary_dataset_count.npy"))
+
     y_true = np.array(train_test[:, 0])
     n_samples = len(y_true)
     # pairs = paired_data(train_test, with_similarity, with_fp, only_fp, multiple_tanimoto)
@@ -118,20 +120,26 @@ def generate_train_test_sets_with_increasing_train_size(train_test, with_similar
     train_test_splits = StratifiedShuffleSplit(n_splits=1, test_size=0.1, random_state=1)
 
     n_fold = 0
-    metrics = []
-    binning = KBinsDiscretizer(n_bins=20, encode="ordinal", strategy="quantile")
+    binning = KBinsDiscretizer(n_bins=20, encode="ordinal", strategy="quantile", random_state=1)
     y_bins = binning.fit_transform(train_test[:, 0:1])
     for train_ids_all, test_ids in train_test_splits.split(train_test[:, 1:], y_bins):
         train_ids_all = list(train_ids_all)
         test_ids = list(test_ids)
 
-    # train_ids = list(np.random.choice(train_ids_all, int(0.05*n_samples), replace=False))
-    train_ids = train_ids_all[:int(0.05*n_samples)]
-    train_ids_pool = list(set(train_ids_all) - set(train_ids))
-    n_iterations = 35
-    count = 0
-    while count <= n_iterations:
+    n_iterations = 25
+    if current_dataset_count == temporary_file_dataset_count:
+        existing_iterations = np.load("extrapolation_active_learning_temporary.npy")
+        count = len(existing_iterations)
+        metrics = list(existing_iterations)
+    else:
+        count = 0
+        metrics = []
 
+    # train_ids = list(np.random.choice(train_ids_all, int(0.05*n_samples), replace=False))
+    train_ids = train_ids_all[:int(0.05 * n_samples) + count * int(0.02 * n_samples)]
+    train_ids_pool = list(set(train_ids_all) - set(train_ids))
+
+    while count <= n_iterations:
         c1_keys_del = list(permutations(train_ids, 2)) + [(a, a) for a in train_ids]
         c2_keys_del = pair_test_with_train(train_ids, test_ids)
         # c3_keys_del = list(permutations(test_ids, 2)) + [(a, a) for a in test_ids]
@@ -141,21 +149,16 @@ def generate_train_test_sets_with_increasing_train_size(train_test, with_similar
                                     'y_true': y_true, "train_pair_ids": c1_keys_del,
                                     "c2_test_pair_ids": c2_keys_del, "c3_test_pair_ids": c3_keys_del}
         train_test_data[n_fold] = train_test_data_per_fold
-        print("Size of train set: %s \n "
-              "Size of test set: %s \n"
-              "Size of train pairs: %s \n "
-              "Size of c2 test pairs: %s " %(len(train_test_data_per_fold["train_ids"]),
-                                             len(train_test_data_per_fold["test_ids"]),
-                                             len(train_test_data_per_fold["train_pair_ids"]),
-                                             len(train_test_data_per_fold["c2_test_pair_ids"])))
 
+        print("Iteration having been completed: %s" %(count))
         print("Running models...")
         start = time.time()
         metric = run_model(train_test_data, percentage_of_top_samples=0.1)
         print(":::Time used: ", time.time() - start, "\n")
         metrics.append(metric[0])
         count += 1
-        np.save("extrapolation_increase_train_size_temporary.npy", np.array(metrics))
+        np.save("temporary_dataset_count.npy", [current_dataset_count])
+        np.save("extrapolation_active_learning_temporary.npy", np.array(metrics))
         train_ids_new = train_ids_pool[:int(0.02 * n_samples)]
         train_ids = train_ids + train_ids_new
         train_ids_pool = list(set(train_ids_pool) - set(train_ids))

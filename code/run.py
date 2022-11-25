@@ -34,25 +34,28 @@ if __name__ == '__main__':
     chembl_info = pd.read_csv("input//chembl_datasets_info.csv")
 
     try:
-        existing_results = np.load("extrapolation_active_learning_run2.npy")
-        count = len(existing_results)
+        existing_results = np.load("extrapolation_active_learning_run1.npy")
+        existing_count = len(existing_results)
         all_metrics = list(existing_results)
     except:
         existing_results = None
-        count = 0
         all_metrics = []
 
+    count = 0
     for file in range(len(chembl_info)):
         if chembl_info["Repetition Rate"][file] > 0.5: continue
         if chembl_info["N(sample)"][file] > 1800 or chembl_info["N(sample)"][file] < 1000: continue
         # if chembl_info["File name"][file] in list_of_files: continue
         count += 1
+        if count <= existing_count: continue
+
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         print("On Dataset No.", count, ", ", chembl_info["File name"][file])
         connection = "/input/qsar_data_unsorted/"
         train_test = dataset(os.getcwd() + connection + chembl_info["File name"][file], shuffle_state=1)
-        metrics = generate_train_test_sets_with_increasing_train_size(train_test)
+
+        metrics = generate_train_test_sets_with_increasing_train_size(train_test, current_dataset_count=count)
 
         all_metrics.append(metrics)
-        np.save("extrapolation_active_learning_run2.npy", np.array(all_metrics))
+        np.save("extrapolation_active_learning_run1.npy", np.array(all_metrics))
 
