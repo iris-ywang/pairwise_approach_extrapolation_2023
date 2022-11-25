@@ -30,30 +30,44 @@ def load_datasets():
 if __name__ == '__main__':
     chembl_info = pd.read_csv("input//chembl_datasets_info.csv")
     try:
-        existing_results = np.load("PA_all_data.npy")
+        existing_results = np.load("PA_all_data_hpc.npy")
+        existing_count = len(existing_results)
+        all_metrics = list(existing_results)
     except:
-        np.save("PA_all_data.npy", np.zeros((1, 10, 3, 18)))
+        existing_results = None
+        existing_count = 0
+        all_metrics = []
 
+    try:
+        _ = np.load("temporary_dataset_count.npy")
+    except:
+        np.save("temporary_dataset_count.npy", [0])
+
+    count = 0
     for file in range(len(chembl_info)):
-        existing_results = np.load("PA_all_data.npy")
-        count = len(existing_results)
         # if len(all_metrics) > 100: break
         # if chembl_info["Repetition Rate"][file] >= 0.50: continue
         # if chembl_info["N(sample)"][file] > 1000 or chembl_info["N(sample)"][file] < 10: continue
         # If dataset passes the above criteria, then it gives a dict of fold number and their corresponding
 
-        print("On Dataset No." + str(count))
+        # HPC filtering: starting from dataset 251:
+        if file < 251: continue
+        # and in this way, I think it is missing dataset 0
+        count += 1
+        if count <= existing_count: continue
+
+        # print("On Dataset No." + str(count))
 
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         connection = "/input/qsar_data_unsorted/"
         train_test = dataset(os.getcwd() + connection + chembl_info["File name"][file], shuffle_state=1)
         data = generate_train_test_sets_ids(train_test, fold=10)
 
-        print("Running models...")
+        # print("Running models...")
         start = time.time()
-        metrics = run_model(data)
-        print(":::Time used: ", time.time() - start, "\n")
+        metrics = run_model(data, current_dataset_count=count)
+        # print(":::Time used: ", time.time() - start, "\n")
 
         new_results = np.concatenate((existing_results, metrics), axis=0)
-        np.save("PA_all_data.npy", np.array(new_results))
+        np.save("PA_all_data_hpc.npy", np.array(new_results))
 

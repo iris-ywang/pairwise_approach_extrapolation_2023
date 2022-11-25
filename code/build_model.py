@@ -96,7 +96,7 @@ def pairwise_differences_for_standard_approach(all_data, y_pred_all, type_of_tes
 
 
 def performance_standard_approach(all_data):
-    _, y_SA = build_ml_model(RandomForestRegressor(n_jobs=16, random_state=1), all_data['train_set'],
+    _, y_SA = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), all_data['train_set'],
                              all_data['test_set'])
     y_pred_all = np.array(all_data["y_true"])
     y_pred_all[all_data["test_ids"]] = y_SA
@@ -113,8 +113,7 @@ def performance_standard_approach(all_data):
             distance_evaluation(abs(Y_c3_true), abs(Y_c3_derived))]
 
 
-
-def performance_pairwise_approach_in_sign_and_abs(all_data, batch_size=100000):
+def performance_pairwise_approach_in_sign_and_abs(all_data, batch_size=500000):
     runs_of_estimators = len(all_data["train_pair_ids"]) // batch_size
 
     if runs_of_estimators < 1:
@@ -122,11 +121,11 @@ def performance_pairwise_approach_in_sign_and_abs(all_data, batch_size=100000):
 
         train_pairs_for_sign = np.array(train_pairs_batch)
         train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
-        rfc = RandomForestClassifier(n_jobs=16, random_state=1)
+        rfc = RandomForestClassifier(n_jobs=-1, random_state=1)
         rfc = build_ml_model(rfc, train_pairs_for_sign)
 
         train_pairs_for_abs = np.absolute(train_pairs_batch)
-        rfr = RandomForestRegressor(n_jobs=16, random_state=1)
+        rfr = RandomForestRegressor(n_jobs=-1, random_state=1)
         rfr = build_ml_model(rfr, train_pairs_for_abs)
 
     else:
@@ -142,11 +141,11 @@ def performance_pairwise_approach_in_sign_and_abs(all_data, batch_size=100000):
 
             train_pairs_for_sign = np.array(train_pairs_batch)
             train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
-            rfc = RandomForestClassifier(n_jobs=16, random_state=1, warm_start=True)
+            rfc = RandomForestClassifier(n_jobs=-1, random_state=1, warm_start=True)
             rfc = build_ml_model(rfc, train_pairs_for_sign)
 
             train_pairs_for_abs = np.absolute(train_pairs_batch)
-            rfr = RandomForestRegressor(n_jobs=16, random_state=1, warm_start=True)
+            rfr = RandomForestRegressor(n_jobs=-1, random_state=1, warm_start=True)
             rfr = build_ml_model(rfr, train_pairs_for_abs)
 
             rfc.n_estimators += 100
@@ -198,11 +197,11 @@ def performance_pairwise_approach_in_sign_and_abs(all_data, batch_size=100000):
     return [metrics_for_y] + metrics_Yc2_together + metrics_Yc3_together
 
 
-def performance_pairwise_approach(all_data, batch_size=100000):
+def performance_pairwise_approach(all_data, batch_size=500000):
     runs_of_estimators = len(all_data["train_pair_ids"]) // batch_size
     if runs_of_estimators < 1:
         train_pairs_batch = paired_data_by_pair_id(all_data["train_test"], all_data['train_pair_ids'])
-        rfr = RandomForestRegressor(n_jobs=16, random_state=1)
+        rfr = RandomForestRegressor(n_jobs=-1, random_state=1)
         rfr = build_ml_model(rfr, train_pairs_batch)
 
     else:
@@ -213,7 +212,7 @@ def performance_pairwise_approach(all_data, batch_size=100000):
                 train_ids_per_batch = all_data["train_pair_ids"][run * batch_size:]
 
             train_pairs_batch = paired_data_by_pair_id(all_data["train_test"], train_ids_per_batch)
-            rfr = RandomForestRegressor(n_jobs=16, random_state=1, warm_start=True)
+            rfr = RandomForestRegressor(n_jobs=-1, random_state=1, warm_start=True)
             rfr = build_ml_model(rfr, train_pairs_batch)
 
             rfr.n_estimators += 100
@@ -265,11 +264,29 @@ def performance_pairwise_approach(all_data, batch_size=100000):
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
-def run_model(data):
-    metrics = []
+def run_model(data, current_dataset_count):
+    temporary_file_dataset_count = int(np.load("temporary_dataset_count.npy"))
+
+    if current_dataset_count == temporary_file_dataset_count:
+        existing_iterations = np.load("PA_all_data_temporary.npy")
+        existing_count = len(existing_iterations)
+        metrics = list(existing_iterations)
+    else:
+        metrics = []
+        existing_count = 0
+
+    count = 0
     for outer_fold, datum in data.items():
+        count += 1
+        if count <= existing_count: continue
+
         metric_sa = flatten(performance_standard_approach(datum))
         metric_pa = flatten(performance_pairwise_approach(datum))
         metric_pa_signNdist = flatten(performance_pairwise_approach_in_sign_and_abs(datum))
         metrics.append([metric_sa, metric_pa, metric_pa_signNdist])
+
+
+        np.save("temporary_dataset_count.npy", [current_dataset_count])
+        np.save("PA_all_data_temporary.npy", np.array(metrics))
+
     return np.array([metrics])
