@@ -78,7 +78,7 @@ def train_test_split(pairs, train_ids, test_ids):
             'c3_test_pair_ids': c3_keys_del}
 
 
-def generate_train_test_sets(train_test, fold, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
+def generate_train_test_sets_ids(train_test, fold, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
     """
     Generate training sets and test sets for standard approach(regression on FP and activities) and for pairwise approach
      (regression on pairwise features and differences in activities) for each fold of cross validation
@@ -87,18 +87,24 @@ def generate_train_test_sets(train_test, fold, with_similarity=False, with_fp=Fa
              sample information
     """
     y_true = np.array(train_test[:, 0])
-    pairs = paired_data(train_test, with_similarity, with_fp, only_fp, multiple_tanimoto)
+    # pairs = paired_data(train_test, with_similarity, with_fp, only_fp, multiple_tanimoto)
 
     train_test_data = {}
     kf = KFold(n_splits=fold)
     n_fold = 0
     for train_ids, test_ids in kf.split(train_test):
-        train_test_data_per_fold = {'train_ids': train_ids, 'test_ids': test_ids, 'train_set': train_test[train_ids],
-                                    'test_set': train_test[test_ids], 'y_true': y_true}
+        c1_keys_del = list(permutations(train_ids, 2)) + [(a, a) for a in train_ids]
+        c2_keys_del = pair_test_with_train(train_ids, test_ids)
+        c3_keys_del = list(permutations(test_ids, 2)) + [(a, a) for a in test_ids]
+        train_test_data_per_fold = {'train_test': train_test,
+                                    'train_ids': train_ids, 'test_ids': test_ids,
+                                    'train_set': train_test[train_ids], 'test_set': train_test[test_ids],
+                                    'y_true': y_true, "train_pair_ids": c1_keys_del,
+                                    "c2_test_pair_ids": c2_keys_del, "c3_test_pair_ids": c3_keys_del}
 
         # a dict of different types of pairs and their samples IDs
-        pairs_data = train_test_split(pairs, train_ids, test_ids)
-        train_test_data[n_fold] = {**train_test_data_per_fold, **pairs_data}
+        # pairs_data = train_test_split(pairs, train_ids, test_ids)
+        train_test_data[n_fold] = train_test_data_per_fold
 
         n_fold += 1
 

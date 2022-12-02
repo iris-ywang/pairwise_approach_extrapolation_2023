@@ -118,6 +118,7 @@ class EvaluateAbilityToIdentifyTopTestSamples:
         top_tests_true, tests_better_than_top_train_true, _, _ = self.find_top_test_ids(self.y_true_all)
         top_tests, tests_better_than_top_train, top_train_id, final_estimate_of_y_and_Y = \
             self.find_top_test_ids(self.y_pred_all, Y_sign_and_abs_predictions)
+        print("Number of tops: " + str(len(top_tests_true)) +", " + str(len(tests_better_than_top_train_true)))
 
         if len(top_tests_true) > 0:
             # Correct Ratio:
@@ -130,12 +131,12 @@ class EvaluateAbilityToIdentifyTopTestSamples:
             precision_better, recall_better, f1_better = self.estimate_precision_recall(tests_better_than_top_train_true,
                                                                                         tests_better_than_top_train)
             # Summation Ratio:
-            self.x = 5 if len(top_tests_true) >= 5 else len(top_tests_true)
+            self.x = 5 if len(self.test_ids) >= 5 else len(self.test_ids)
             sum_y_true_of_pred_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_pred_all)
             sum_y_true_of_true_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_true_all)
             summation_ratio_at_5 = sum_y_true_of_pred_top_test / sum_y_true_of_true_top_test
 
-            self.x = 10 if len(top_tests_true) >= 5 else len(top_tests_true)
+            self.x = 10 if len(self.test_ids) >= 10 else len(self.test_ids)
             sum_y_true_of_pred_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_pred_all)
             sum_y_true_of_true_top_test = self.find_sum_of_estimates_of_top_x_tests(self.y_true_all)
             summation_ratio_at_10 = sum_y_true_of_pred_top_test / sum_y_true_of_true_top_test
@@ -148,6 +149,9 @@ class EvaluateAbilityToIdentifyTopTestSamples:
             # MSE(corectly identified tests in top 20%)
             mse_of_tests_top_pc = self.calculate_mse_top_tests_identified(top_tests_true, top_tests,
                                                                           final_estimate_of_y_and_Y)
+            mse_of_tests_better = self.calculate_mse_top_tests_identified(tests_better_than_top_train_true,
+                                                                          tests_better_than_top_train,
+                                                                          final_estimate_of_y_and_Y)
 
             # Correct Ratio for Y extremes
             top_x_pairs_true, bottom_x_pairs_true = self.find_x_extreme_pairs(self.y_true_all)
@@ -158,12 +162,13 @@ class EvaluateAbilityToIdentifyTopTestSamples:
 
             return [correct_ratio_exceeding_train, correct_ratio_top_of_dataset,
                     summation_ratio_at_5, summation_ratio_at_10,
-                    summation_ratio_at_20pc, mse_of_tests_top_pc,
+                    summation_ratio_at_20pc,
+                    mse_of_tests_top_pc, mse_of_tests_better,
                     correct_ratio_top_pairs, correct_ratio_bottom_pairs,
                     precision_top, recall_top, f1_top,
                     precision_better, recall_better, f1_better]
         else:
-            return [np.nan for _ in range(14)]
+            return [np.nan for _ in range(15)]
 
     @staticmethod
     def calculate_correct_ratio(top_samples_true, top_samples_pred):
