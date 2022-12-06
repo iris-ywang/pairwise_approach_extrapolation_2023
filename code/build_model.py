@@ -148,7 +148,7 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
 def run_model(data, current_dataset_count, percentage_of_top_samples):
     temporary_file_dataset_count = int(np.load("extrapolation_temporary_dataset_count.npy"))
     try:
-        with open('models.pickle', 'wb') as fp:
+        with open('models.pickle', 'rb') as fp:
             models = pickle.load(fp)
     except:
         models = {}
