@@ -147,13 +147,6 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
 
 def run_model(data, current_dataset_count, percentage_of_top_samples):
     temporary_file_dataset_count = int(np.load("extrapolation_temporary_dataset_count.npy"))
-    try:
-        with open('models.pickle', 'rb') as fp:
-            models = pickle.load(fp)
-    except:
-        models = {}
-        with open('models.pickle', 'wb') as fp:
-            pickle.dump(models, fp)
 
     if current_dataset_count == temporary_file_dataset_count:
         existing_iterations = np.load("extrapolation_kfold_cv_all_data_temporary.npy")
@@ -174,8 +167,5 @@ def run_model(data, current_dataset_count, percentage_of_top_samples):
         np.save("extrapolation_temporary_dataset_count.npy", [current_dataset_count])
         np.save("extrapolation_kfold_cv_all_data_temporary.npy", np.array(metrics))
 
-        models[str(current_dataset_count) + '，' + str(count)] = [rfr_sa, rfr_pa, rfc_pa]
-        with open('models.pickle', 'wb') as fp:
-            pickle.dump(models, fp)
 
     return np.array([metrics])
