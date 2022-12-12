@@ -63,7 +63,7 @@ if __name__ == '__main__':
         filename = chembl_info.iloc[file]["File name"]
         print("On Dataset No.", count, ", ", filename)
 
-        with open('dataset_running_order.txt', 'w') as f:
+        with open('dataset_running_order.txt', 'a') as f:
             f.write(filename)
 
         connection = "/input/qsar_data_unsorted/"

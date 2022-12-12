@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import mean_squared_error, precision_score, recall_score, f1_score
+from sklearn.metrics import mean_squared_error, precision_score, recall_score, f1_score, ndcg_score
 
 
 class EvaluateAbilityToIdentifyTopTestSamples:
@@ -114,6 +114,29 @@ class EvaluateAbilityToIdentifyTopTestSamples:
 
         return precision, recall, f1
 
+    def ndcg_top_pc(self):
+        k = int(self.pc * len(self.test_ids)) if int(self.pc * len(self.test_ids)) > 1 else 1
+        return ndcg_score([self.y_true_all[self.test_ids]], [self.y_pred_all[self.test_ids]],
+                          k=k)
+
+    def RIE(self, top_tests_true):
+        alpha = 1 / self.pc
+        overall_orders = np.argsort(-self.y_pred_all[self.test_ids]) # a list of test sample IDs in the descending order of activity values
+        ordered_ids = np.array(self.test_ids)[overall_orders]
+        sorter = np.argsort(ordered_ids)
+        ranks_of_actives = sorter[np.searchsorted(ordered_ids, top_tests_true, sorter=sorter)] + 1
+        relative_rank = ranks_of_actives / (max(overall_orders) + 1)
+        numerator = sum( np.exp(-1 * alpha * relative_rank))
+
+        rng = np.random.default_rng()
+        random_orders = np.array([rng.choice(max(overall_orders)+1, len(top_tests_true), replace=False) + 1
+                                  for _ in range(1000)])
+        random_relative_rank = random_orders / (max(overall_orders) + 1)
+        denominator = np.mean(np.sum(np.exp(-1 * alpha * random_relative_rank), axis=1))
+
+        return numerator / denominator
+
+
     def run_evaluation(self, Y_sign_and_abs_predictions=None):
         top_tests_true, tests_better_than_top_train_true, _, _ = self.find_top_test_ids(self.y_true_all)
         top_tests, tests_better_than_top_train, top_train_id, final_estimate_of_y_and_Y = \
@@ -157,14 +180,16 @@ class EvaluateAbilityToIdentifyTopTestSamples:
             top_x_pairs_true, bottom_x_pairs_true = self.find_x_extreme_pairs(self.y_true_all)
             top_x_pairs_pred, bottom_x_pairs_pred = self.find_x_extreme_pairs(self.y_pred_all,
                                                                               Y_sign_and_abs_predictions)
-            correct_ratio_top_pairs = self.calculate_correct_ratio(top_x_pairs_true, top_x_pairs_pred)
-            correct_ratio_bottom_pairs = self.calculate_correct_ratio(bottom_x_pairs_true, bottom_x_pairs_pred)
+            # correct_ratio_top_pairs = self.calculate_correct_ratio(top_x_pairs_true, top_x_pairs_pred)
+            # correct_ratio_bottom_pairs = self.calculate_correct_ratio(bottom_x_pairs_true, bottom_x_pairs_pred)
+            rie = self.RIE(top_tests_true)
+            ndcg_top_pc = self.ndcg_top_pc()
 
             return [correct_ratio_exceeding_train, correct_ratio_top_of_dataset,
                     summation_ratio_at_5, summation_ratio_at_10,
                     summation_ratio_at_20pc,
                     mse_of_tests_top_pc, mse_of_tests_better,
-                    correct_ratio_top_pairs, correct_ratio_bottom_pairs,
+                    rie, ndcg_top_pc,
                     precision_top, recall_top, f1_top,
                     precision_better, recall_better, f1_better]
         else:
