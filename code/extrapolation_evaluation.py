@@ -115,26 +115,22 @@ class EvaluateAbilityToIdentifyTopTestSamples:
         return precision, recall, f1
 
     def ndcg_top_pc(self):
-        k = int(self.pc * len(self.test_ids)) if int(self.pc * len(self.test_ids)) > 1 else 1
+        if len(self.test_ids) <= 5:
+            return ndcg_score([self.y_true_all[self.test_ids]], [self.y_pred_all[self.test_ids]])
+        k = int(self.pc * len(self.test_ids)) if int(self.pc * len(self.test_ids)) > 5 else 5
         return ndcg_score([self.y_true_all[self.test_ids]], [self.y_pred_all[self.test_ids]],
                           k=k)
 
     def RIE(self, top_tests_true):
         alpha = 1 / self.pc
-        overall_orders = np.argsort(-self.y_pred_all[self.test_ids]) # a list of test sample IDs in the descending order of activity values
-        ordered_ids = np.array(self.test_ids)[overall_orders]
+        overall_orders = np.argsort(-self.y_pred_all[self.test_ids]) # a list of test sample indice in the descending order of activity values
+        ordered_ids = np.array(self.test_ids)[overall_orders] # a list of test IDs in the descending order of activity values
         sorter = np.argsort(ordered_ids)
         ranks_of_actives = sorter[np.searchsorted(ordered_ids, top_tests_true, sorter=sorter)] + 1
         relative_rank = ranks_of_actives / (max(overall_orders) + 1)
         numerator = sum( np.exp(-1 * alpha * relative_rank))
-
-        rng = np.random.default_rng()
-        random_orders = np.array([rng.choice(max(overall_orders)+1, len(top_tests_true), replace=False) + 1
-                                  for _ in range(1000)])
-        random_relative_rank = random_orders / (max(overall_orders) + 1)
-        denominator = np.mean(np.sum(np.exp(-1 * alpha * random_relative_rank), axis=1))
-
-        return numerator / denominator
+        print(numerator, "/ ", relative_rank)
+        return numerator
 
 
     def run_evaluation(self, Y_sign_and_abs_predictions=None):
