@@ -114,9 +114,12 @@ def paired_data_by_pair_id(data, pair_ids, with_similarity=False, with_fp=False,
     """
     pairing_tool = PairingDatasetByPairID(data, pair_ids, with_similarity, with_fp, only_fp, multiple_tanimoto)
 
-    with multiprocessing.Pool(processes=None) as executor:
-        results = executor.map(pairing_tool.parallelised_pairing_process, range(pairing_tool.n_combinations))
-    return np.array([values for _, values in dict(results).items()])
+    results = []
+    for comb_id in range(pairing_tool.n_combinations):
+        comb, result = pairing_tool.parallelised_pairing_process(comb_id)
+        results.append(result)
+    return np.array(results)
+
 
 
 class PairingDatasetByPairID:
