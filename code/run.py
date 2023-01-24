@@ -30,54 +30,19 @@ def load_datasets():
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
+    filename = 'concrete_data.csv'
 
-    chembl_info = pd.read_csv("input//chembl_datasets_info.csv").sort_values(by=["N(sample)"])
-    all_metrics = []
+    connection = "/input/"
+    train_test = dataset(os.getcwd() + connection + filename, shuffle_state=1)[:200, :]
+    print("Generating datasets...")
+    start = time.time()
+    data = generate_train_test_sets_ids(train_test, fold=10)
+    print(":::Time used: ", time.time() - start)
 
-    try:
-        existing_results = np.load("extrapolation_kfold_cv_all_data_hpc.npy")
-        existing_count = len(existing_results)
-        all_metrics = list(existing_results)
-    except:
-        existing_results = None
-        existing_count = 0
-        all_metrics = []
+    print("Running models...")
+    start = time.time()
+    metrics = run_model(data, percentage_of_top_samples=0.1)
+    print(":::Time used: ", time.time() - start, "\n")
+    np.save("concrete_data_results.npy", metrics[0])
 
-    try:
-        _ = np.load("extrapolation_temporary_dataset_count.npy")
-    except:
-        np.save("extrapolation_temporary_dataset_count.npy", [0])
-
-    count = 0
-    for file in range(len(chembl_info)):
-        # if len(all_metrics) > 100: break
-        # if chembl_info["Repetition Rate"][file] > 0.15: continue
-        # if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
-        # If dataset passes the above criteria, then it gives a dict of fold number and their corresponding
-        # pre-processed data
-
-        count += 1
-        if count <= existing_count:
-            continue
-        # TODO: may need to change the way of getting parent directory if this does not work on windows
-        filename = chembl_info.iloc[file]["File name"]
-        print("On Dataset No.", count, ", ", filename)
-
-        with open('dataset_running_order.txt', 'a') as f:
-            f.write(filename)
-
-        connection = "/input/qsar_data_unsorted/"
-        train_test = dataset(os.getcwd() + connection + filename, shuffle_state=1)
-        print("Generating datasets...")
-        start = time.time()
-        data = generate_train_test_sets_ids(train_test, fold=10)
-        print(":::Time used: ", time.time() - start)
-
-        print("Running models...")
-        start = time.time()
-        metrics = run_model(data, current_dataset_count=count, percentage_of_top_samples=0.1)
-        print(":::Time used: ", time.time() - start, "\n")
-
-        all_metrics.append(metrics)
-        np.save("extrapolation_kfold_cv_all_data_hpc.npy", np.array(all_metrics))
 

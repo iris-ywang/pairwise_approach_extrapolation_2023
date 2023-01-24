@@ -83,7 +83,7 @@ def performance_standard_approach(all_data, percentage_of_top_samples):
     return metrics, sa_model
 
 
-def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_size=200000):
+def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_size=1000000):
     runs_of_estimators = len(all_data["train_pair_ids"]) // batch_size
 
     if runs_of_estimators < 1:
@@ -145,27 +145,12 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
     return metrics, rfc, rfr
 
 
-def run_model(data, current_dataset_count, percentage_of_top_samples):
-    temporary_file_dataset_count = int(np.load("extrapolation_temporary_dataset_count.npy"))
-
-    if current_dataset_count == temporary_file_dataset_count:
-        existing_iterations = np.load("extrapolation_kfold_cv_all_data_temporary.npy")
-        existing_count = len(existing_iterations)
-        metrics = list(existing_iterations)
-    else:
-        metrics = []
-        existing_count = 0
-
-    count = 0
+def run_model(data, percentage_of_top_samples):
+    metrics = []
     for outer_fold, datum in data.items():
-        count += 1
-        if count <= existing_count: continue
+
         metric_sa, rfr_sa = performance_standard_approach(datum, percentage_of_top_samples)
         metric_pa, rfc_pa, rfr_pa = performance_pairwise_approach(datum, percentage_of_top_samples)
         metrics.append([metric_sa, metric_pa])
-
-        np.save("extrapolation_temporary_dataset_count.npy", [current_dataset_count])
-        np.save("extrapolation_kfold_cv_all_data_temporary.npy", np.array(metrics))
-
 
     return np.array([metrics])

@@ -44,10 +44,10 @@ class PairingDataset:
 
     def parallelised_pairing_process(self, combination_id):
         sample_id_a, sample_id_b = self.permutation_pairs[combination_id]
-        sample_a = self.data[sample_id_a: sample_id_a + 1, :]
-        sample_b = self.data[sample_id_b: sample_id_b + 1, :]
+        sample_a = self.data[sample_id_a, :]
+        sample_b = self.data[sample_id_b, :]
 
-        pair_ab = pair_2samples(self.n_columns, sample_a, sample_b, self.feature_variation)
+        pair_ab = sample_a - sample_b
         return (sample_id_a, sample_id_b), pair_ab
 
 
