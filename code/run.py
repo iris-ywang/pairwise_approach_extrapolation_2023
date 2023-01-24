@@ -32,17 +32,21 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore")
     filename = 'concrete_data.csv'
 
+    metrics_all = []
     connection = "/input/"
-    train_test = dataset(os.getcwd() + connection + filename, shuffle_state=1)[:200, :]
-    print("Generating datasets...")
-    start = time.time()
-    data = generate_train_test_sets_ids(train_test, fold=10)
-    print(":::Time used: ", time.time() - start)
+    for random_run in range(10):
+        train_test = dataset(os.getcwd() + connection + filename, shuffle_state=random_run)
+        print("Generating datasets...")
+        start = time.time()
+        data = generate_train_test_sets_ids(train_test, fold=10)
+        print(":::Time used: ", time.time() - start)
 
-    print("Running models...")
-    start = time.time()
-    metrics = run_model(data, percentage_of_top_samples=0.1)
-    print(":::Time used: ", time.time() - start, "\n")
-    np.save("concrete_data_results.npy", metrics[0])
+        print("Running models...")
+        start = time.time()
+        metrics = run_model(data, percentage_of_top_samples=0.1)
+        print(":::Time used: ", time.time() - start, "\n")
+        metrics_all.append(metrics[0])
+        print(np.nanmean(metrics[0], axis=0))
+    np.save("concrete_data_results.npy", np.array(metrics_all))
 
 
