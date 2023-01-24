@@ -30,7 +30,7 @@ def load_datasets():
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
-    filename = 'concrete_data.csv'
+    filename = 'Admission_Predict.csv'
 
     metrics_all = []
     connection = "/input/"
@@ -47,6 +47,6 @@ if __name__ == '__main__':
         print(":::Time used: ", time.time() - start, "\n")
         metrics_all.append(metrics[0])
         print(np.nanmean(metrics[0], axis=0))
-    np.save("concrete_data_results.npy", np.array(metrics_all))
+    np.save("admission_data_results.npy", np.array(metrics_all))
 
 
