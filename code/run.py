@@ -30,7 +30,7 @@ def load_datasets():
 
 
 def run_datasets_in_parallel(file):
-    chembl_info = pd.read_csv("input//chembl_datasets_info.csv").sort_values(by=["N(sample)"])
+    chembl_info = pd.read_csv("input//chembl_svm_remaining.csv").sort_values(by=["N(sample)"])
     file_count = file + 1
     # TODO: may need to change the way of getting parent directory if this does not work on windows
     filename = chembl_info.iloc[file]["File name"]
@@ -70,7 +70,7 @@ def count_finished_datasets(sorted_chembl_info):
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
 
-    chembl_info = pd.read_csv("input//chembl_datasets_info.csv").sort_values(by=["N(sample)"])
+    chembl_info = pd.read_csv("input//chembl_svm_remaining.csv").sort_values(by=["N(sample)"])
     existing_count = count_finished_datasets(chembl_info)
 
     with multiprocessing.Pool() as executor:
