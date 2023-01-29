@@ -133,5 +133,5 @@ class PairingDatasetByPairID:
         sample_a = self.data[sample_id_a: sample_id_a + 1, :]
         sample_b = self.data[sample_id_b: sample_id_b + 1, :]
 
-        pair_ab = pair_2samples(self.n_columns, sample_a, sample_b, self.feature_variation)
+        pair_ab = pair_2samples(sample_a, sample_b, self.feature_variation)
         return (sample_id_a, sample_id_b), pair_ab
