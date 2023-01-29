@@ -4,8 +4,8 @@ import pandas as pd
 import time
 import warnings
 
-from pa_basics.import_chembl_data import dataset
-from split_data import generate_train_test_sets_ids
+from pa_basics.import_chembl_data import uniform_features, duplicated_features
+from split_data import train_test_sets_splits
 from build_model import run_model
 
 
@@ -28,25 +28,39 @@ def load_datasets():
     return filename_lst
 
 
+def gene_data_combine_train_test(train_filename, test_filename, number_of_train_to_use):
+
+    train_all = pd.read_csv(train_filename, index_col=0).iloc[:number_of_train_to_use, :]
+    test_all = pd.read_csv(test_filename, index_col=0)
+
+    train_test = pd.concat([train_all, test_all], ignore_index=True)
+    cols = train_test.columns.tolist()
+    cols = cols[-1:] + cols[:-1]
+    train_test = np.array(train_test[cols])
+
+    filter1 = uniform_features(train_test)
+    filter2 = duplicated_features(filter1)
+
+    return filter2
+
+
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
-    filename = 'Admission_Predict.csv'
+
+    train_filename = os.getcwd() + "/input" + '/AARS_base_train.csv'
+    test_filename = os.getcwd() + "/input" + '/AARS_base_test.csv'
 
     metrics_all = []
-    connection = "/input/"
-    for random_run in range(10):
-        train_test = dataset(os.getcwd() + connection + filename, shuffle_state=random_run)
-        print("Generating datasets...")
-        start = time.time()
-        data = generate_train_test_sets_ids(train_test, fold=10)
-        print(":::Time used: ", time.time() - start)
+    for number_of_train_to_use in range(50, 510, 10):
 
+        train_test = gene_data_combine_train_test(train_filename, test_filename, number_of_train_to_use)
+        data = train_test_sets_splits(train_test, number_of_train_to_use)
         print("Running models...")
         start = time.time()
         metrics = run_model(data, percentage_of_top_samples=0.1)
         print(":::Time used: ", time.time() - start, "\n")
         metrics_all.append(metrics[0])
         print(np.nanmean(metrics[0], axis=0))
-    np.save("admission_data_results.npy", np.array(metrics_all))
+    np.save("AARS_base_train_results.npy", np.array(metrics_all))
 
 

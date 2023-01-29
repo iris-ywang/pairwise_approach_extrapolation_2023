@@ -83,7 +83,7 @@ def performance_standard_approach(all_data, percentage_of_top_samples):
     return metrics, sa_model
 
 
-def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_size=1000000):
+def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_size=200000):
     runs_of_estimators = len(all_data["train_pair_ids"]) // batch_size
 
     if runs_of_estimators < 1:

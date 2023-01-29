@@ -111,10 +111,23 @@ def generate_train_test_sets_ids(train_test, fold, with_similarity=False, with_f
     return train_test_data
 
 
-def load_and_check_data(filename, shuffle_state=None):
-    train_test = dataset(filename, shuffle_state)  # load datasets from the file_path; filter it;
-    if data_check(train_test):  # check if the criteria is satisfied
-        data = generate_train_test_sets(train_test)  # if so, generate (pairwise) training and test samples
-        return data
-    else:
-        return None
+def train_test_sets_splits(train_test, number_of_train_to_use, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
+    train_ids = list(range(number_of_train_to_use))
+    test_ids = list(range(number_of_train_to_use, len(train_test)))
+    y_true = np.array(train_test[:, 0])
+
+    c1_keys_del = list(permutations(train_ids, 2)) + [(a, a) for a in train_ids]
+    c2_keys_del = pair_test_with_train(train_ids, test_ids)
+    c3_keys_del = list(permutations(test_ids, 2)) + [(a, a) for a in test_ids]
+    train_test_data_per_fold = {'train_test': train_test,
+                                'train_ids': train_ids, 'test_ids': test_ids,
+                                'train_set': train_test[train_ids], 'test_set': train_test[test_ids],
+                                'y_true': y_true, "train_pair_ids": c1_keys_del,
+                                "c2_test_pair_ids": c2_keys_del, "c3_test_pair_ids": c3_keys_del}
+
+    # a dict of different types of pairs and their samples IDs
+    # pairs_data = train_test_split(pairs, train_ids, test_ids)
+    train_test_data = {0: train_test_data_per_fold}
+
+    return train_test_data
+

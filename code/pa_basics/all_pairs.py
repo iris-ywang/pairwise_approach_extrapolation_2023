@@ -47,11 +47,11 @@ class PairingDataset:
         sample_a = self.data[sample_id_a, :]
         sample_b = self.data[sample_id_b, :]
 
-        pair_ab = sample_a - sample_b
+        pair_ab = pair_2samples(sample_a, sample_b, self.feature_variation)
         return (sample_id_a, sample_id_b), pair_ab
 
 
-def pair_2samples(n_columns, sample_a, sample_b, feature_variation):
+def pair_2samples(sample_a, sample_b, feature_variation):
     """
     Transform the information from two single samples to a pair
     Note the Rules of pairwise features:
