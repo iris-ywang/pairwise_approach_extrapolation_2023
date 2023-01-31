@@ -127,12 +127,10 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
     Y_pa_c2_sign, Y_pa_c2_dist = [], []
     Y_pa_c2_true = []
     for test_batch in range(number_test_batches + 1):
-        if test_batch != number_test_batches + 1:
-            test_pair_id_batch = c2_test_pair_ids[
-                                 test_batch * batch_size: (test_batch + 1) * batch_size]
-        else:
-            test_pair_id_batch = c2_test_pair_ids[test_batch * batch_size:]
+        test_pair_id_batch = c2_test_pair_ids[
+                             test_batch * batch_size: (test_batch + 1) * batch_size]
         test_pairs_batch = paired_data_by_pair_id(all_data["train_test"], test_pair_id_batch)
+        print("Shape of test_pairs_batch: ", np.shape(test_pairs_batch))
         Y_pa_c2_sign += list(rfc.predict(test_pairs_batch[:, 1:]))
         Y_pa_c2_dist += list(rfr.predict(np.absolute(test_pairs_batch[:, 1:])))
         Y_pa_c2_true += list(test_pairs_batch[:,0])

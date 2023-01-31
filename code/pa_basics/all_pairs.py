@@ -110,7 +110,7 @@ def paired_data_by_pair_id(data, pair_ids, with_similarity=False, with_fp=False,
     :param data: np.array of all samples (train_test) - [y, x1, x2, ..., xn]
     :param with_similarity: bool - if true, the pairwise features include pairwise similarity measures
     :param with_fp: bool - if true, the pairwise features include original samples' FP
-    :return: a dict - keys = (ID_a, ID_b); values = [Y_ab, X1, X2, ...Xn]
+    :return: a np array of [Y_ab, X1, X2, ...Xn]
     """
     pairing_tool = PairingDatasetByPairID(data, pair_ids, with_similarity, with_fp, only_fp, multiple_tanimoto)
 
