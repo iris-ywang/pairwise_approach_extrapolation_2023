@@ -133,7 +133,7 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
         print("Shape of test_pairs_batch: ", np.shape(test_pairs_batch))
         Y_pa_c2_sign += list(rfc.predict(test_pairs_batch[:, 1:]))
         Y_pa_c2_dist += list(rfr.predict(np.absolute(test_pairs_batch[:, 1:])))
-        Y_pa_c2_true += list(test_pairs_batch[:,0])
+        Y_pa_c2_true += list(test_pairs_batch[:, 0])
         if (test_batch + 1) * batch_size >= len(c2_test_pair_ids): break
 
 

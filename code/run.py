@@ -51,7 +51,7 @@ if __name__ == '__main__':
     test_filename = os.getcwd() + "/input" + '/AARS_base_test.csv'
 
     metrics_all = []
-    for number_of_train_to_use in range(100, 510, 10):
+    for number_of_train_to_use in range(50, 510, 10):
 
         train_test = gene_data_combine_train_test(train_filename, test_filename, number_of_train_to_use)
         data = train_test_sets_splits(train_test, number_of_train_to_use)
