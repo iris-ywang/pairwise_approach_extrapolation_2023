@@ -134,6 +134,8 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
         Y_pa_c2_sign += list(rfc.predict(test_pairs_batch[:, 1:]))
         Y_pa_c2_dist += list(rfr.predict(np.absolute(test_pairs_batch[:, 1:])))
         Y_pa_c2_true += list(test_pairs_batch[:,0])
+        if (test_batch + 1) * batch_size >= len(c2_test_pair_ids): break
+
 
     Y_c2_sign_and_abs_predictions = dict(zip(all_data["c2_test_pair_ids"], np.array([Y_pa_c2_dist, Y_pa_c2_sign]).T))
     y_ranking = rating_trueskill(Y_pa_c2_sign, all_data["c2_test_pair_ids"], all_data["y_true"])
