@@ -47,11 +47,11 @@ def gene_data_combine_train_test(train_filename, test_filename, number_of_train_
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
 
-    train_filename = os.getcwd() + "/input" + '/AARS_base_train.csv'
-    test_filename = os.getcwd() + "/input" + '/AARS_base_test.csv'
+    train_filename = os.getcwd() + "/input" + '/ABCB6_base_train.csv'
+    test_filename = os.getcwd() + "/input" + '/ABCB6_base_test.csv'
 
     metrics_all = []
-    for number_of_train_to_use in range(430, 510, 10):
+    for number_of_train_to_use in range(10, 510, 10):
 
         train_test = gene_data_combine_train_test(train_filename, test_filename, number_of_train_to_use)
         data = train_test_sets_splits(train_test, number_of_train_to_use)
@@ -61,6 +61,6 @@ if __name__ == '__main__':
         print(":::Time used: ", time.time() - start, "\n")
         metrics_all.append(metrics[0])
         print(np.nanmean(metrics[0], axis=0))
-        np.save("AARS_base_train_results_430.npy", np.array(metrics_all))
+        np.save("ABCB6_base_train_results_10.npy", np.array(metrics_all))
 
 
