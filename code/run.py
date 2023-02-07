@@ -51,7 +51,7 @@ if __name__ == '__main__':
     test_filename = os.getcwd() + "/input" + '/ABCC5_base_test.csv'
 
     metrics_all = []
-    for number_of_train_to_use in range(450, 810, 10):
+    for number_of_train_to_use in range(610, 810, 10):
         print("Size:", number_of_train_to_use)
         train_test = gene_data_combine_train_test(train_filename, test_filename, number_of_train_to_use)
         data = train_test_sets_splits(train_test, number_of_train_to_use)
@@ -61,6 +61,6 @@ if __name__ == '__main__':
         print(":::Time used: ", time.time() - start, "\n")
         metrics_all.append(metrics[0])
         print(np.nanmean(metrics[0], axis=0))
-        np.save("ABCC5_base_train_results_450.npy", np.array(metrics_all))
+        np.save("ABCC5_base_train_results_610.npy", np.array(metrics_all))
 
 
