@@ -9,33 +9,26 @@ from split_data import generate_train_test_sets_ids
 from build_model import run_model
 
 
-def load_datasets():
-    """
-    Create a list of directories for all the qsar datasets to be evaluated
-    :return:
-    list of strings
-    """
-    filename_lst = []
-    # TODO: may need to change the way of getting parent directory if this does not work on windows
-    directory = os.getcwd() + '/input/qsar_data_unsorted'
-
-    for root, dirs, files in os.walk(directory):
-        for each_file in files:
-            if each_file.endswith(".csv"):
-                f = open(os.path.join(root, each_file), 'r')
-                filename_lst.append(os.path.join(root, each_file))
-                f.close()
-    return filename_lst
+def process_datasets(create_size=100):
+    new_files = np.load("tml_gene_names.npy")
+    for gene_name in new_files:
+        train = pd.read_csv(gene_name + "_base_train.csv", index_col=0).sample(n=int(0.7*create_size))
+        test = pd.read_csv(gene_name + "_base_test.csv", index_col=0).sample(n=int(0.3*create_size))
+        dataset = pd.concat([train, test], ignore_index=True)
+        cols = dataset.columns.tolist()
+        cols = cols[-1:] + cols[:-1]
+        dataset = dataset[cols]
+        dataset.to_csv(os.getcwd() + "/processed_tml_datasets_100/" + gene_name + "_"+str(create_size)+".csv", index=False)
 
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
-
-    chembl_info = pd.read_csv("input//chembl_datasets_info.csv").sort_values(by=["N(sample)"])
+    connection = "/input/processed_tml_datasets_100/"
+    list_of_file_names = os.listdir(os.getcwd() + connection)
     all_metrics = []
 
     try:
-        existing_results = np.load("extrapolation_kfold_cv_all_data_hpc.npy")
+        existing_results = np.load("extrapolation_10fcv_tml_100.npy")
         existing_count = len(existing_results)
         all_metrics = list(existing_results)
     except:
@@ -44,12 +37,12 @@ if __name__ == '__main__':
         all_metrics = []
 
     try:
-        _ = np.load("extrapolation_temporary_dataset_count.npy")
+        _ = np.load("tml_temporary_dataset_count_100.npy")
     except:
-        np.save("extrapolation_temporary_dataset_count.npy", [0])
+        np.save("tml_temporary_dataset_count_100.npy", [0])
 
     count = 0
-    for file in range(len(chembl_info)):
+    for file in range(len(list_of_file_names)):
         # if len(all_metrics) > 100: break
         # if chembl_info["Repetition Rate"][file] > 0.15: continue
         # if chembl_info["N(sample)"][file] > 300 or chembl_info["N(sample)"][file] < 90: continue
@@ -60,13 +53,12 @@ if __name__ == '__main__':
         if count <= existing_count:
             continue
         # TODO: may need to change the way of getting parent directory if this does not work on windows
-        filename = chembl_info.iloc[file]["File name"]
+        filename = list_of_file_names[file]
         print("On Dataset No.", count, ", ", filename)
 
-        with open('dataset_running_order.txt', 'a') as f:
+        with open('dataset_running_order_tml_100.txt', 'a') as f:
             f.write(filename)
 
-        connection = "/input/qsar_data_unsorted/"
         train_test = dataset(os.getcwd() + connection + filename, shuffle_state=1)
         print("Generating datasets...")
         start = time.time()
@@ -79,5 +71,5 @@ if __name__ == '__main__':
         print(":::Time used: ", time.time() - start, "\n")
 
         all_metrics.append(metrics)
-        np.save("extrapolation_kfold_cv_all_data_hpc.npy", np.array(all_metrics))
+        np.save("extrapolation_10fcv_tml_100.npy", np.array(all_metrics))
 
