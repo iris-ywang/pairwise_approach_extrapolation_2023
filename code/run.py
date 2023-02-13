@@ -18,17 +18,17 @@ def process_datasets(create_size=100):
         cols = dataset.columns.tolist()
         cols = cols[-1:] + cols[:-1]
         dataset = dataset[cols]
-        dataset.to_csv(os.getcwd() + "/processed_tml_datasets_100/" + gene_name + "_"+str(create_size)+".csv", index=False)
+        dataset.to_csv(os.getcwd() + "/processed_tml_datasets/" + gene_name + "_"+str(create_size)+".csv", index=False)
 
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
-    connection = "/input/processed_tml_datasets_100/"
+    connection = "/input/processed_tml_datasets_200/"
     list_of_file_names = os.listdir(os.getcwd() + connection)
     all_metrics = []
 
     try:
-        existing_results = np.load("extrapolation_10fcv_tml_100.npy")
+        existing_results = np.load("extrapolation_10fcv_tml_200.npy")
         existing_count = len(existing_results)
         all_metrics = list(existing_results)
     except:
@@ -37,9 +37,9 @@ if __name__ == '__main__':
         all_metrics = []
 
     try:
-        _ = np.load("tml_temporary_dataset_count_100.npy")
+        _ = np.load("tml_temporary_dataset_count_200.npy")
     except:
-        np.save("tml_temporary_dataset_count_100.npy", [0])
+        np.save("tml_temporary_dataset_count_200.npy", [0])
 
     count = 0
     for file in range(len(list_of_file_names)):
@@ -56,7 +56,7 @@ if __name__ == '__main__':
         filename = list_of_file_names[file]
         print("On Dataset No.", count, ", ", filename)
 
-        with open('dataset_running_order_tml_100.txt', 'a') as f:
+        with open('dataset_running_order_tml_200.txt', 'a') as f:
             f.write(filename)
 
         train_test = dataset(os.getcwd() + connection + filename, shuffle_state=1)
@@ -71,5 +71,5 @@ if __name__ == '__main__':
         print(":::Time used: ", time.time() - start, "\n")
 
         all_metrics.append(metrics)
-        np.save("extrapolation_10fcv_tml_100.npy", np.array(all_metrics))
+        np.save("extrapolation_10fcv_tml_200.npy", np.array(all_metrics))
 
