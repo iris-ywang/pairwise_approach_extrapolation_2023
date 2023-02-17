@@ -1,5 +1,7 @@
 import os
 import numpy as np
+from datetime import datetime
+
 import pandas as pd
 import time
 import warnings
@@ -30,17 +32,17 @@ def load_datasets():
 
 
 def run_datasets_in_parallel(file):
-    chembl_info = pd.read_csv("input//chembl_svm_remaining.csv").sort_values(by=["N(sample)"])
+    directory_connection = "/input/processed_tml_datasets_100/"
+    all_file_names = os.listdir(os.getcwd() + directory_connection)
     file_count = file + 1
     # TODO: may need to change the way of getting parent directory if this does not work on windows
-    filename = chembl_info.iloc[file]["File name"]
+    filename = all_file_names[file]
     print("On Dataset No.", file_count, ", ", filename)
 
-    with open(os.getcwd() + "/extrapolation_svm/"+'dataset_svm_running_order.txt', 'a') as f:
-        f.write("Running Dataset No."+str(file_count)+filename + "\n")
+    with open(os.getcwd() + "/extrapolation_svm/"+'dataset_running_order_tml_svm_100.txt', 'a') as f:
+        f.write("\n"+"Running Dataset No."+str(file_count)+filename + "\n")
 
-    connection = "/input/qsar_data_unsorted/"
-    train_test = dataset(os.getcwd() + connection + filename, shuffle_state=1)
+    train_test = dataset(os.getcwd() + directory_connection + filename, shuffle_state=1)
     print("Generating datasets...")
     start = time.time()
     data = generate_train_test_sets_ids(train_test, fold=10)
@@ -51,17 +53,19 @@ def run_datasets_in_parallel(file):
     metrics = run_model(data, current_filename=filename, percentage_of_top_samples=0.1)
     print(":::Time used: ", time.time() - start, "\n")
 
-    np.save(os.getcwd() + "/extrapolation_svm/" + "extrapolation_svm_kfold_cv_all_data_hpc_"+str(filename)+".npy", metrics)
-    with open('dataset_svm_running_order.txt', 'a') as f:
+    np.save(os.getcwd() + "/extrapolation_svm/" + "extrapolation_10fcv_tml_svm_100"+str(filename)+".npy", metrics)
+    with open(os.getcwd() + "/extrapolation_svm/"+'dataset_running_order_tml_svm_100.txt', 'a') as f:
         f.write("\n"+"Finished Dataset No."+str(file_count)+filename + "\n")
 
 
-def count_finished_datasets(sorted_chembl_info):
+def count_finished_datasets(all_file_names):
     existing_count = 0
-    for file in range(len(sorted_chembl_info)):
-        filename = sorted_chembl_info.iloc[file]["File name"]
+    for file in range(len(all_file_names)):
+        filename = all_file_names[file]
         try:
-            _ = np.load(os.getcwd() + "/extrapolation_svm/" + "extrapolation_svm_kfold_cv_all_data_hpc_"+str(filename)+".npy")
+            _ = np.load(os.getcwd()
+                        + "/extrapolation_svm/"
+                        + "extrapolation_10fcv_tml_svm_100" + str(filename) + ".npy")
             existing_count += 1
         except FileNotFoundError:
             return existing_count
@@ -69,12 +73,16 @@ def count_finished_datasets(sorted_chembl_info):
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
+    connection = "/input/processed_tml_datasets_100/"
+    list_of_file_names = os.listdir(os.getcwd() + connection)
 
-    chembl_info = pd.read_csv("input//chembl_svm_remaining.csv").sort_values(by=["N(sample)"])
-    existing_count = count_finished_datasets(chembl_info)
+    existing_count = count_finished_datasets(list_of_file_names)
+
+    with open(os.getcwd() + "/extrapolation_svm/"+'dataset_running_order_tml_svm_100.txt', 'a') as f:
+        f.write("\n"+str(datetime.now().strftime("%d/%m/%Y %H:%M:%S")) + "\n")
 
     with multiprocessing.Pool() as executor:
-        executor.map(run_datasets_in_parallel, range(existing_count, len(chembl_info)),1)
+        executor.map(run_datasets_in_parallel, range(existing_count, len(list_of_file_names)), 1)
 
 
 

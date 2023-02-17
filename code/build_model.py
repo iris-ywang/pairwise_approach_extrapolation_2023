@@ -147,7 +147,9 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
 
 def run_model(data, current_filename, percentage_of_top_samples):
     try:
-        existing_iterations = np.load(os.getcwd() + "/extrapolation_svm/"+ "extrapolation_svm_kfold_cv_all_data_temporary_"+str(current_filename)+".npy")
+        existing_iterations = np.load(os.getcwd()
+                                      + "/extrapolation_svm/"
+                                      + "extrapolation_10fcv_tml_svm_100_temporary_"+str(current_filename) +".npy")
         existing_count = len(existing_iterations)
         metrics = list(existing_iterations)
     except FileNotFoundError:
@@ -161,6 +163,9 @@ def run_model(data, current_filename, percentage_of_top_samples):
         metric_sa, rfr_sa = performance_standard_approach(datum, percentage_of_top_samples)
         metric_pa, rfc_pa, rfr_pa = performance_pairwise_approach(datum, percentage_of_top_samples)
         metrics.append([metric_sa, metric_pa])
-        np.save(os.getcwd() + "/extrapolation_svm/"+ "extrapolation_svm_kfold_cv_all_data_temporary_"+str(current_filename)+".npy", np.array(metrics))
+        np.save(os.getcwd()
+                + "/extrapolation_svm/"
+                + "extrapolation_10fcv_tml_svm_100_temporary_"+str(current_filename)+".npy",
+                np.array(metrics))
 
     return np.array([metrics])
