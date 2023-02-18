@@ -39,7 +39,7 @@ def run_datasets_in_parallel(file):
     filename = all_file_names[file]
     print("On Dataset No.", file_count, ", ", filename)
 
-    with open(os.getcwd() + "/extrapolation_svm/"+'dataset_running_order_tml_svm_100.txt', 'a') as f:
+    with open(os.getcwd() + "/extrapolation_xgb/"+'dataset_running_order_tml_xgb_100.txt', 'a') as f:
         f.write("\n"+"Running Dataset No."+str(file_count)+filename + "\n")
 
     train_test = dataset(os.getcwd() + directory_connection + filename, shuffle_state=1)
@@ -53,8 +53,8 @@ def run_datasets_in_parallel(file):
     metrics = run_model(data, current_filename=filename, percentage_of_top_samples=0.1)
     print(":::Time used: ", time.time() - start, "\n")
 
-    np.save(os.getcwd() + "/extrapolation_svm/" + "extrapolation_10fcv_tml_svm_100"+str(filename)+".npy", metrics)
-    with open(os.getcwd() + "/extrapolation_svm/"+'dataset_running_order_tml_svm_100.txt', 'a') as f:
+    np.save(os.getcwd() + "/extrapolation_xgb/" + "extrapolation_10fcv_tml_xgb_100"+str(filename)+".npy", metrics)
+    with open(os.getcwd() + "/extrapolation_xgb/"+'dataset_running_order_tml_xgb_100.txt', 'a') as f:
         f.write("\n"+"Finished Dataset No."+str(file_count)+filename + "\n")
 
 
@@ -64,8 +64,8 @@ def count_finished_datasets(all_file_names):
         filename = all_file_names[file]
         try:
             _ = np.load(os.getcwd()
-                        + "/extrapolation_svm/"
-                        + "extrapolation_10fcv_tml_svm_100" + str(filename) + ".npy")
+                        + "/extrapolation_xgb/"
+                        + "extrapolation_10fcv_tml_xgb_100" + str(filename) + ".npy")
             existing_count += 1
         except FileNotFoundError:
             return existing_count
@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     existing_count = count_finished_datasets(list_of_file_names)
 
-    with open(os.getcwd() + "/extrapolation_svm/"+'dataset_running_order_tml_svm_100.txt', 'a') as f:
+    with open(os.getcwd() + "/extrapolation_xgb/"+'dataset_running_order_tml_xgb_100.txt', 'a') as f:
         f.write("\n"+str(datetime.now().strftime("%d/%m/%Y %H:%M:%S")) + "\n")
 
     with multiprocessing.Pool() as executor:
