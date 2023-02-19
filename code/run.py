@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import time
 import warnings
+from datetime import datetime
 
 from pa_basics.import_chembl_data import dataset
 from split_data import generate_train_test_sets_ids
@@ -23,12 +24,12 @@ def process_datasets(create_size=100):
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
-    connection = "/input/processed_tml_datasets_200/"
+    connection = "/input/processed_tml_datasets_100/"
     list_of_file_names = os.listdir(os.getcwd() + connection)
     all_metrics = []
 
     try:
-        existing_results = np.load("extrapolation_10fcv_tml_200.npy")
+        existing_results = np.load("extrapolation_10fcv_tml_knn_100.npy")
         existing_count = len(existing_results)
         all_metrics = list(existing_results)
     except:
@@ -37,9 +38,12 @@ if __name__ == '__main__':
         all_metrics = []
 
     try:
-        _ = np.load("tml_temporary_dataset_count_200.npy")
+        _ = np.load("tml_temporary_dataset_knn_count_100.npy")
     except:
-        np.save("tml_temporary_dataset_count_200.npy", [0])
+        np.save("tml_temporary_dataset_knn_count_100.npy", [0])
+
+    with open('dataset_running_order_tml_knn_100.txt', 'a') as f:
+        f.write("\n"+str(datetime.now().strftime("%d/%m/%Y %H:%M:%S")) + "\n")
 
     count = 0
     for file in range(len(list_of_file_names)):
@@ -56,7 +60,7 @@ if __name__ == '__main__':
         filename = list_of_file_names[file]
         print("On Dataset No.", count, ", ", filename)
 
-        with open('dataset_running_order_tml_200.txt', 'a') as f:
+        with open('dataset_running_order_tml_knn_100.txt', 'a') as f:
             f.write(filename)
 
         train_test = dataset(os.getcwd() + connection + filename, shuffle_state=1)
@@ -71,5 +75,5 @@ if __name__ == '__main__':
         print(":::Time used: ", time.time() - start, "\n")
 
         all_metrics.append(metrics)
-        np.save("extrapolation_10fcv_tml_200.npy", np.array(all_metrics))
+        np.save("extrapolation_10fcv_tml_knn_100.npy", np.array(all_metrics))
 
