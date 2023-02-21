@@ -47,6 +47,6 @@ if __name__ == '__main__':
         print(":::Time used: ", time.time() - start, "\n")
         metrics_all.append(metrics[0])
         print(np.nanmean(metrics[0], axis=0))
-    np.save("concrete_results_trial1.npy", np.array(metrics_all))
+    np.save("concrete_results_trial2.npy", np.array(metrics_all))
 
 
