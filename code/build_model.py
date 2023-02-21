@@ -74,12 +74,14 @@ def metrics_evaluation(y_true, y_predict):
 
 
 def performance_standard_approach(all_data, percentage_of_top_samples):
-    sa_model, y_SA = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), all_data['train_set'], all_data['test_set'])
+    sa_model, y_SA = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), all_data['train_set'],
+                                    all_data['test_set'])
     y_pred_all = np.array(all_data["y_true"])
     y_pred_all[all_data["test_ids"]] = y_SA
 
     metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
                                                       y_pred_all, all_data).run_evaluation()
+    metrics += metrics_evaluation(all_data["test_set"][:, 0], y_SA)
     return metrics, sa_model
 
 
@@ -102,10 +104,10 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
 
         for run in range(runs_of_estimators + 1):
             if run < runs_of_estimators:
-                train_ids_per_batch = all_data["train_pair_ids"][run*batch_size:(run + 1) * batch_size]
+                train_ids_per_batch = all_data["train_pair_ids"][run * batch_size:(run + 1) * batch_size]
 
             else:
-                train_ids_per_batch = all_data["train_pair_ids"][run*batch_size:]
+                train_ids_per_batch = all_data["train_pair_ids"][run * batch_size:]
 
             train_pairs_batch = paired_data_by_pair_id(all_data["train_test"], train_ids_per_batch)
 
@@ -135,20 +137,40 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
         test_pairs_batch = paired_data_by_pair_id(all_data["train_test"], test_pair_id_batch)
         Y_pa_c2_sign += list(rfc.predict(test_pairs_batch[:, 1:]))
         Y_pa_c2_dist += list(rfr.predict(np.absolute(test_pairs_batch[:, 1:])))
-        Y_pa_c2_true += list(test_pairs_batch[:,0])
+        Y_pa_c2_true += list(test_pairs_batch[:, 0])
+        if (test_batch + 1) * batch_size >= len(c2_test_pair_ids): break
 
     Y_c2_sign_and_abs_predictions = dict(zip(all_data["c2_test_pair_ids"], np.array([Y_pa_c2_dist, Y_pa_c2_sign]).T))
     y_ranking = rating_trueskill(Y_pa_c2_sign, all_data["c2_test_pair_ids"], all_data["y_true"])
 
     metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
                                                       y_ranking, all_data).run_evaluation(Y_c2_sign_and_abs_predictions)
+
+    y_estimates = estimate_y_from_final_ranking_and_absolute_Y(all_data["test_ids"], y_ranking,
+                                                               all_data["y_true"], Y_c2_sign_and_abs_predictions)
+    metrics += (metrics_evaluation(all_data["test_set"][:, 0], y_estimates))
     return metrics, rfc, rfr
+
+
+def estimate_y_from_final_ranking_and_absolute_Y(test_ids, ranking, y_true, Y_c2_sign_and_abs_predictions):
+    final_estimate_of_y_and_delta_y = {test_id: [] for test_id in test_ids}
+    for pair_id, values in Y_c2_sign_and_abs_predictions.items():
+        test_a, test_b = pair_id
+        sign_ab = np.sign(ranking[test_a] - ranking[test_b])
+
+        if test_a in test_ids and test_b not in test_ids:
+            final_estimate_of_y_and_delta_y[test_a].append(y_true[test_b] + (values[0] * sign_ab))
+        elif test_b in test_ids and test_a not in test_ids:
+            final_estimate_of_y_and_delta_y[test_b].append(y_true[test_a] - (values[0] * sign_ab))
+
+    mean_estimates = [np.mean(estimate_list)
+                      for test_id, estimate_list in final_estimate_of_y_and_delta_y.items()]
+    return mean_estimates
 
 
 def run_model(data, percentage_of_top_samples):
     metrics = []
     for outer_fold, datum in data.items():
-
         metric_sa, rfr_sa = performance_standard_approach(datum, percentage_of_top_samples)
         metric_pa, rfc_pa, rfr_pa = performance_pairwise_approach(datum, percentage_of_top_samples)
         metrics.append([metric_sa, metric_pa])

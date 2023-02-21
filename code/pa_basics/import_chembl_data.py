@@ -5,12 +5,14 @@ import ChEMBL dataset and convert it to filtered np.array
 import pandas as pd
 import numpy as np
 from sklearn.utils import shuffle
+from sklearn.preprocessing import minmax_scale
 
 
 def dataset(filename, shuffle_state=None):
     orig_data = import_data(filename, shuffle_state)
     filter1 = uniform_features(orig_data)
     filter2 = duplicated_features(filter1)
+    filter2[:, 1:] = minmax_scale(filter2[:, 1:])
     return filter2
 
 

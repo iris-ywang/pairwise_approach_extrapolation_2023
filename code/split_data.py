@@ -2,7 +2,6 @@ import numpy as np
 from sklearn.model_selection import KFold
 from itertools import permutations, product
 
-from pa_basics.all_pairs import paired_data
 from pa_basics.import_chembl_data import dataset
 
 
@@ -109,12 +108,3 @@ def generate_train_test_sets_ids(train_test, fold, with_similarity=False, with_f
         n_fold += 1
 
     return train_test_data
-
-
-def load_and_check_data(filename, shuffle_state=None):
-    train_test = dataset(filename, shuffle_state)  # load datasets from the file_path; filter it;
-    if data_check(train_test):  # check if the criteria is satisfied
-        data = generate_train_test_sets(train_test)  # if so, generate (pairwise) training and test samples
-        return data
-    else:
-        return None
