@@ -95,4 +95,4 @@ class PairingDatasetByPairID:
 
         pair_ab = sample_a - sample_b
 
-        return (sample_id_a, sample_id_b), pair_ab + sample_a + sample_b
+        return (sample_id_a, sample_id_b), np.array(list(pair_ab) + list(sample_a) + list(sample_b))
