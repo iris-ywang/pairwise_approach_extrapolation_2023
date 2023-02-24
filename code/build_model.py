@@ -125,10 +125,10 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
 
 
 def run_model(data, current_dataset_count, percentage_of_top_samples):
-    temporary_file_dataset_count = int(np.load("tml_temporary_dataset_knn_count_100.npy"))
+    temporary_file_dataset_count = int(np.load("tml_temporary_dataset_knn_count_200.npy"))
 
     if current_dataset_count == temporary_file_dataset_count:
-        existing_iterations = np.load("extrapolation_10fcv_tml_knn_100_temporary.npy")
+        existing_iterations = np.load("extrapolation_10fcv_tml_knn_200_temporary.npy")
         existing_count = len(existing_iterations)
         metrics = list(existing_iterations)
     else:
@@ -143,7 +143,7 @@ def run_model(data, current_dataset_count, percentage_of_top_samples):
         metric_pa, rfc_pa, rfr_pa = performance_pairwise_approach(datum, percentage_of_top_samples)
         metrics.append([metric_sa, metric_pa])
 
-        np.save("tml_temporary_dataset_knn_count_100.npy", [current_dataset_count])
-        np.save("extrapolation_10fcv_tml_knn_100_temporary.npy", np.array(metrics))
+        np.save("tml_temporary_dataset_knn_count_200.npy", [current_dataset_count])
+        np.save("extrapolation_10fcv_tml_knn_200_temporary.npy", np.array(metrics))
 
     return np.array([metrics])
