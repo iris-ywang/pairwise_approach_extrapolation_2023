@@ -3,11 +3,10 @@ Create all pairs
 """
 
 import numpy as np
-from itertools import permutations
 import multiprocessing
 from sklearn.metrics import jaccard_score
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances, manhattan_distances
-
+from sklearn.preprocessing import KBinsDiscretizer
 from scipy.spatial.distance import dice, yule, kulsinski, sokalmichener
 
 
@@ -63,7 +62,7 @@ def similarity_metrics(fp1, fp2):
     ]
 
 
-def paired_data_by_pair_id(data, pair_ids, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
+def paired_data_by_pair_id(data, pair_ids, mapping, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
     """
     Generate all possible pairs from a QSAR dataset
     :param only_fp: bool - if true, the pairwise features only contains original samples' FP
@@ -72,7 +71,11 @@ def paired_data_by_pair_id(data, pair_ids, with_similarity=False, with_fp=False,
     :param with_fp: bool - if true, the pairwise features include original samples' FP
     :return: a dict - keys = (ID_a, ID_b); values = [Y_ab, X1, X2, ...Xn]
     """
-    pairing_tool = PairingDatasetByPairID(data, pair_ids, with_similarity, with_fp, only_fp, multiple_tanimoto)
+
+    pairing_tool = PairingDatasetByPairID(data,
+                                          pair_ids,
+                                          mapping,
+                                          with_similarity, with_fp, only_fp, multiple_tanimoto)
 
     with multiprocessing.Pool(processes=None) as executor:
         results = executor.map(pairing_tool.parallelised_pairing_process, range(pairing_tool.n_combinations))
@@ -80,8 +83,9 @@ def paired_data_by_pair_id(data, pair_ids, with_similarity=False, with_fp=False,
 
 
 class PairingDatasetByPairID:
-    def __init__(self, data, pair_ids, with_similarity, with_fp, only_fp, multiple_tanimoto):
+    def __init__(self, data, pair_ids, mapping, with_similarity, with_fp, only_fp, multiple_tanimoto):
         self.data = data
+        self.mapping = mapping
         self.feature_variation = [with_similarity, with_fp, only_fp, multiple_tanimoto]
 
         self.n_samples, self.n_columns = np.shape(data)
@@ -90,9 +94,28 @@ class PairingDatasetByPairID:
 
     def parallelised_pairing_process(self, combination_id):
         sample_id_a, sample_id_b = self.permutation_pairs[combination_id]
-        sample_a = self.data[sample_id_a, :]
-        sample_b = self.data[sample_id_b, :]
+        sample_a = self.data[sample_id_a: sample_id_a + 1, :]
+        sample_b = self.data[sample_id_b: sample_id_b + 1, :]
 
-        pair_ab = sample_a - sample_b
+        pair_ab = pair_2samples_discretise(sample_a, sample_b, self.mapping)
 
-        return (sample_id_a, sample_id_b), np.array(list(pair_ab) + list(sample_a) + list(sample_b))
+        return (sample_id_a, sample_id_b), pair_ab
+
+def pair_2samples_discretise(sample_a, sample_b, mapping):
+
+    delta_y = sample_a[0, 0] - sample_b[0, 0]
+    new_sample = [delta_y]
+
+    a = sample_a[0, 1:]
+    b = sample_b[0, 1:]
+
+    for feature_id in range(len(a)):
+        feature_combi = (a[feature_id], b[feature_id])
+        new_sample.append(mapping[feature_combi])
+    return new_sample
+
+def transform_into_ordinal_features(x, n_bins=2):
+    est = KBinsDiscretizer(n_bins=n_bins, encode='ordinal', strategy='quantile')
+    est.fit(x)
+    x_transformed = est.transform(x)
+    return x_transformed
