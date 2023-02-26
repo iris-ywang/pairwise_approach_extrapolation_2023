@@ -90,7 +90,7 @@ def performance_standard_approach(all_data, percentage_of_top_samples):
 def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_size=1000000):
     runs_of_estimators = len(all_data["train_pair_ids"]) // batch_size
 
-    n_bins = 2
+    n_bins = 4
     discretised_train_test = np.array(all_data["train_test"])
     discretised_train_test[:, 1:] = transform_into_ordinal_features(all_data["train_test"][:, 1:], n_bins=n_bins)
     mapping = dict(enumerate(
