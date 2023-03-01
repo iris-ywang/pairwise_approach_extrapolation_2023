@@ -35,7 +35,7 @@ if __name__ == '__main__':
     all_metrics = []
 
     try:
-        existing_results = np.load("extrapolation_kfold_cv_all_data_hpc.npy")
+        existing_results = np.load("extrapolation_kfold_cv_all_data_lr.npy")
         existing_count = len(existing_results)
         all_metrics = list(existing_results)
     except:
@@ -44,9 +44,9 @@ if __name__ == '__main__':
         all_metrics = []
 
     try:
-        _ = np.load("extrapolation_temporary_dataset_count.npy")
+        _ = np.load("extrapolation_temporary_dataset_count_lr.npy")
     except:
-        np.save("extrapolation_temporary_dataset_count.npy", [0])
+        np.save("extrapolation_temporary_dataset_count_lr.npy", [0])
 
     count = 0
     for file in range(len(chembl_info)):
@@ -63,7 +63,7 @@ if __name__ == '__main__':
         filename = chembl_info.iloc[file]["File name"]
         print("On Dataset No.", count, ", ", filename)
 
-        with open('dataset_running_order.txt', 'a') as f:
+        with open('dataset_running_order_lr.txt', 'a') as f:
             f.write(filename)
 
         connection = "/input/qsar_data_unsorted/"
@@ -79,5 +79,5 @@ if __name__ == '__main__':
         print(":::Time used: ", time.time() - start, "\n")
 
         all_metrics.append(metrics)
-        np.save("extrapolation_kfold_cv_all_data_hpc.npy", np.array(all_metrics))
+        np.save("extrapolation_kfold_cv_all_data_lp.npy", np.array(all_metrics))
 
