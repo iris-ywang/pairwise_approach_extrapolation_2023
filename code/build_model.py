@@ -2,12 +2,11 @@ import numpy as np
 import pickle
 from itertools import permutations
 
-from sklearn.linear_model import Lasso
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score
 from scipy.stats import spearmanr, kendalltau
 from extrapolation_evaluation import EvaluateAbilityToIdentifyTopTestSamples
-from pa_basics.all_pairs import paired_data_by_pair_id, transform_into_ordinal_features
+from pa_basics.all_pairs import pair_by_pair_id_per_feature
 from pa_basics.rating import rating_trueskill
 
 
@@ -87,21 +86,12 @@ def performance_standard_approach(all_data, percentage_of_top_samples):
     return metrics, sa_model
 
 
-def performance_pairwise_approach(all_data, percentage_of_top_samples, n_bins, batch_size=1000000):
+def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_size=1000000):
     runs_of_estimators = len(all_data["train_pair_ids"]) // batch_size
 
-    # n_bins = 4
-    discretised_train_test = np.array(all_data["train_test"])
-    discretised_train_test[:, 1:] = transform_into_ordinal_features(all_data["train_test"][:, 1:], n_bins=n_bins)
-    mapping = dict(enumerate(
-        list(permutations(range(n_bins), 2)) + [(a, a) for a in range(n_bins)]
-    ))
-    mapping = {v: k for k, v in mapping.items()}
-
     if runs_of_estimators < 1:
-        train_pairs_batch = paired_data_by_pair_id(data=discretised_train_test,
-                                                   pair_ids=all_data['train_pair_ids'],
-                                                   mapping=mapping)
+        train_pairs_batch = pair_by_pair_id_per_feature(data=all_data["train_test"],
+                                                        pair_ids=all_data['train_pair_ids'])
 
         train_pairs_for_sign = np.array(train_pairs_batch)
         train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
@@ -121,9 +111,8 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, n_bins, b
             else:
                 train_ids_per_batch = all_data["train_pair_ids"][run * batch_size:]
 
-            train_pairs_batch = paired_data_by_pair_id(data=discretised_train_test,
-                                                       pair_ids=train_ids_per_batch,
-                                                       mapping=mapping)
+            train_pairs_batch = pair_by_pair_id_per_feature(data=all_data["train_test"],
+                                                            pair_ids=train_ids_per_batch)
 
             train_pairs_for_sign = np.array(train_pairs_batch)
             train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
@@ -148,10 +137,9 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, n_bins, b
                                  test_batch * batch_size: (test_batch + 1) * batch_size]
         else:
             test_pair_id_batch = c2_test_pair_ids[test_batch * batch_size:]
-        test_pairs_batch = paired_data_by_pair_id(
-            data=discretised_train_test,
-            pair_ids=test_pair_id_batch,
-            mapping=mapping)
+        test_pairs_batch = pair_by_pair_id_per_feature(data=all_data["train_test"],
+                                                       pair_ids=test_pair_id_batch)
+
         Y_pa_c2_sign += list(rfc.predict(test_pairs_batch[:, 1:]))
         Y_pa_c2_dist += list(rfr.predict(np.absolute(test_pairs_batch[:, 1:])))
         Y_pa_c2_true += list(test_pairs_batch[:, 0])
@@ -185,11 +173,25 @@ def estimate_y_from_final_ranking_and_absolute_Y(test_ids, ranking, y_true, Y_c2
     return mean_estimates
 
 
-def run_model(data, percentage_of_top_samples, n_bins):
-    metrics = []
+def run_model(data, current_dataset_count, percentage_of_top_samples):
+    temporary_file_dataset_count = int(np.load("extrapolation_temporary_dataset_count_reg_trial1.npy"))
+
+    if current_dataset_count == temporary_file_dataset_count:
+        existing_iterations = np.load("extrapolation_kfold_cv_reg_trial1_temporary.npy")
+        existing_count = len(existing_iterations)
+        metrics = list(existing_iterations)
+    else:
+        metrics = []
+        existing_count = 0
+
+    count = 0
     for outer_fold, datum in data.items():
+        count += 1
+        if count <= existing_count: continue
         metric_sa, rfr_sa = performance_standard_approach(datum, percentage_of_top_samples)
-        metric_pa, rfc_pa, rfr_pa = performance_pairwise_approach(datum, percentage_of_top_samples, n_bins)
+        metric_pa, rfc_pa, rfr_pa = performance_pairwise_approach(datum, percentage_of_top_samples)
         metrics.append([metric_sa, metric_pa])
+        np.save("extrapolation_temporary_dataset_count_reg_trial1.npy", [current_dataset_count])
+        np.save("extrapolation_kfold_cv_reg_trial1_temporary.npy", np.array(metrics))
 
     return np.array([metrics])

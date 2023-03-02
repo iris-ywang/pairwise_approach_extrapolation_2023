@@ -1,56 +1,76 @@
 import os
 import numpy as np
 import pandas as pd
-import time
 import warnings
+from datetime import datetime
 
 from pa_basics.import_chembl_data import dataset
 from split_data import generate_train_test_sets_ids
 from build_model import run_model
 
+def get_chembl_info():
+    chembl_info = pd.DataFrame(columns=[
+        "File name",
+        "Chembl ID",
+        "N(sample)",
+        "N(features)",
+        "OpenML ID"])
+    connection = "/code/input/qsar_data_meta/small_feature43_6337_24848/"
+    file_names = os.listdir(os.getcwd() + connection)
+    for filename in file_names:
+        dataset = pd.read_csv(os.getcwd() + connection + filename, index_col=None)
+        n_samples, n_features = dataset.shape
+        n_features -= 1
+        if (dataset.iloc[:, 1:].nunique() <= 10).any():
+            print(filename)
+            print(dataset.iloc[:, 1:].nunique())
+        chembl_info = chembl_info.append({
+            "File name": filename,
+            "Chembl ID": filename.replace("QSAR-DATASET-FOR-DRUG-TARGET-CHEMBL", "").replace(".csv", ""),
+            "N(sample)": n_samples,
+            "N(features)": n_features,
+            "OpenML ID": "6337-24848"},
+            ignore_index=True
+        )
 
-def load_datasets():
-    """
-    Create a list of directories for all the qsar datasets to be evaluated
-    :return:
-    list of strings
-    """
-    filename_lst = []
-    # TODO: may need to change the way of getting parent directory if this does not work on windows
-    directory = os.getcwd() + '/input/qsar_data_unsorted'
-
-    for root, dirs, files in os.walk(directory):
-        for each_file in files:
-            if each_file.endswith(".csv"):
-                f = open(os.path.join(root, each_file), 'r')
-                filename_lst.append(os.path.join(root, each_file))
-                f.close()
-    return filename_lst
 
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
-    filename = 'concrete_data.csv'
 
-    metrics_all = []
-    connection = "/input/"
-    all_bins = [6, 10, 15, 20, 30]
-    for n in range(5):
-        n_bins = all_bins[n]
-        for random_run in range(10):
-            train_test = dataset(os.getcwd() + connection + filename, shuffle_state=random_run)
-            print("Generating datasets...")
-            start = time.time()
-            data = generate_train_test_sets_ids(train_test, fold=10)
-            print(":::Time used: ", time.time() - start)
+    chembl_info = pd.read_csv("input//chembl_reg_info.csv").sort_values(by=["N(sample)"])
+    chembl_info = chembl_info[chembl_info["N(sample)"] >= 30]
 
-            print("Running models...")
-            start = time.time()
-            metrics = run_model(data, percentage_of_top_samples=0.1, n_bins=n_bins)
-            print(":::Time used: ", time.time() - start, "\n")
-            metrics_all.append(metrics[0])
-            print(np.nanmean(metrics[0], axis=0))
-        np.save("concrete_results_trial"+str(n + 6)+".npy", np.array(metrics_all))
+    try:
+        existing_results = np.load("extrapolation_kfold_cv_reg_trial1.npy")
+        existing_count = len(existing_results)
+        all_metrics = list(existing_results)
+    except:
+        existing_results = None
+        existing_count = 0
+        all_metrics = []
 
+    try:
+        _ = np.load("extrapolation_temporary_dataset_count_reg_trial1.npy")
+    except:
+        np.save("extrapolation_temporary_dataset_count_reg_trial1.npy", [0])
 
+    count = 0
+    for file in range(len(chembl_info)):
+        count += 1
+        if count <= existing_count:
+            continue
+        connection = "/input/qsar_data_meta/small_feature43_6337_24848/"
+        filename = chembl_info.iloc[file]["File name"]
+        print(datetime.now(), " -- ", "On Dataset No.", count, ", ", filename)
 
+        train_test = dataset(os.getcwd() + connection + filename, shuffle_state=1)
+        print(datetime.now(), " -- ", "Generating datasets...")
+        data = generate_train_test_sets_ids(train_test, fold=10)
+
+        print(datetime.now(), " -- ", "Running models...")
+        metrics = run_model(data, current_dataset_count=count, percentage_of_top_samples=0.1)
+        all_metrics.append(metrics[0])
+        print(datetime.now(), " -- ")
+        print(np.nanmean(metrics[0], axis=0))
+        np.save("extrapolation_kfold_cv_reg_trial1", np.array(all_metrics))

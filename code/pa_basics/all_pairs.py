@@ -4,6 +4,8 @@ Create all pairs
 
 import numpy as np
 import multiprocessing
+from itertools import permutations
+
 from sklearn.metrics import jaccard_score
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances, manhattan_distances
 from sklearn.preprocessing import KBinsDiscretizer
@@ -103,18 +105,77 @@ class PairingDatasetByPairID:
 
 def pair_2samples_discretise(sample_a, sample_b, mapping):
 
-    delta_y = sample_a[0, 0] - sample_b[0, 0]
-    new_sample = [delta_y]
-
-    a = sample_a[0, 1:]
-    b = sample_b[0, 1:]
-
+    a = sample_a[0, :]
+    b = sample_b[0, :]
+    new_sample = []
     for feature_id in range(len(a)):
         feature_combi = (a[feature_id], b[feature_id])
         new_sample.append(mapping[feature_combi])
     return new_sample
 
-def transform_into_ordinal_features(x, n_bins=2):
+
+
+class PairingDataByFeature():
+    def __init__(self, data, pair_ids, mapping):
+        self.data = data
+        self.mapping = mapping
+
+        self.n_samples, self.n_columns = np.shape(data)
+        self.permutation_pairs = pair_ids
+        self.n_combinations = len(self.permutation_pairs)
+
+    def parallelised_pairing_process(self, combination_id):
+
+        sample_id_a, sample_id_b = self.permutation_pairs[combination_id]
+        sample_a = self.data[sample_id_a: sample_id_a + 1, :]
+        sample_b = self.data[sample_id_b: sample_id_b + 1, :]
+
+        pair_ab = pair_2samples_discretise(sample_a, sample_b, self.mapping)
+
+        return (sample_id_a, sample_id_b), pair_ab
+
+def pair_by_pair_id_per_feature(data, pair_ids):
+    n_bins_max = 10
+    n_samples, n_columns = data.shape
+    results_dict = {}
+    for pair in pair_ids:
+        a, b = pair
+        y = data[a, 0] - data[b, 0]
+        results_dict[pair] = [y]
+
+    for feature in range(1, n_columns):
+        n_unique = len(np.unique(data[:, feature]))
+        if n_unique <= n_bins_max:
+            x_t = data[:, feature: feature+1]
+            mapping = make_mapping(n_unique)
+        else:
+            x_t = transform_into_ordinal_features(data[:, feature: feature+1],
+                                                  n_bins=n_bins_max)
+            mapping = make_mapping(n_bins_max)
+
+        pairing_tool = PairingDataByFeature(x_t,
+                                            pair_ids,
+                                            mapping)
+
+        with multiprocessing.Pool(processes=None) as executor:
+            results = executor.map(pairing_tool.parallelised_pairing_process, range(pairing_tool.n_combinations))
+
+        for key, value in dict(results).items():
+            results_dict[key].append(value[0])
+
+    return np.array([values for _, values in dict(results_dict).items()])
+
+
+# utils
+def make_mapping(n_bins: int) -> dict:
+    mapping = dict(enumerate(
+        list(permutations(range(n_bins), 2)) + [(a, a) for a in range(n_bins)]
+    ))
+    mapping = {v: k for k, v in mapping.items()}
+    return mapping
+
+
+def transform_into_ordinal_features(x: np.array, n_bins=2) -> np.array:
     est = KBinsDiscretizer(n_bins=n_bins, encode='ordinal', strategy='quantile')
     est.fit(x)
     x_transformed = est.transform(x)
