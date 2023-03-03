@@ -70,10 +70,10 @@ if __name__ == '__main__':
         train_test = dataset(os.getcwd() + connection + filename, shuffle_state=1)
 
         if len(np.unique(train_test[:, 0])) == 1:
+            with open('dataset_running_order_lr.txt', 'a') as f:
+                f.write("WARNING: Cannot build model with only one target value for Dataset " + filename + "\n")
             print("WARNING: Cannot build model with only one target value for Dataset " + filename)
-
-        with open('dataset_running_order_lr.txt', 'a') as f:
-            f.write("WARNING: Cannot build model with only one target value for Dataset " + filename + "\n")
+            continue
 
         print("Generating datasets...")
         start = time.time()
@@ -86,5 +86,5 @@ if __name__ == '__main__':
         print(":::Time used: ", time.time() - start, "\n")
 
         all_metrics.append(metrics)
-        np.save("extrapolation_kfold_cv_all_data_lp.npy", np.array(all_metrics))
+        np.save("extrapolation_kfold_cv_all_data_lr.npy", np.array(all_metrics))
 
