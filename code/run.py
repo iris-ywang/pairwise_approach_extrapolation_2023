@@ -64,10 +64,17 @@ if __name__ == '__main__':
         print("On Dataset No.", count, ", ", filename)
 
         with open('dataset_running_order_lr.txt', 'a') as f:
-            f.write(filename)
+            f.write(filename, "\n")
 
         connection = "/input/qsar_data_unsorted/"
         train_test = dataset(os.getcwd() + connection + filename, shuffle_state=1)
+
+        if len(np.unique(train_test[:, 0])) == 1:
+            print("WARNING: Cannot build model with only one target value for Dataset " + filename)
+
+        with open('dataset_running_order_lr.txt', 'a') as f:
+            f.write("WARNING: Cannot build model with only one target value for Dataset " + filename, "\n")
+
         print("Generating datasets...")
         start = time.time()
         data = generate_train_test_sets_ids(train_test, fold=10)
