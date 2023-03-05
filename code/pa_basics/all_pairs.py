@@ -146,7 +146,7 @@ def pair_by_pair_id_per_feature(data, pair_ids):
     for feature in range(1, n_columns):
         n_unique = len(np.unique(data[:, feature]))
         if n_unique <= n_bins_max:
-            x_t = data[:, feature: feature+1]
+            x_t = np.round(data[:, feature: feature+1] * (n_unique-1), 0)
             mapping = make_mapping(n_unique)
         else:
             x_t = transform_into_ordinal_features(data[:, feature: feature+1],
