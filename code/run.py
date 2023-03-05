@@ -39,7 +39,7 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore")
 
     chembl_info = pd.read_csv("input//chembl_reg_info.csv").sort_values(by=["N(sample)"])
-    chembl_info = chembl_info[chembl_info["N(sample)"] >= 30].iloc[2:]
+    chembl_info = chembl_info[chembl_info["N(sample)"] >= 30]
 
     try:
         existing_results = np.load("extrapolation_kfold_cv_reg_trial1.npy")
