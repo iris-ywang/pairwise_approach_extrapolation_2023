@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score
 from scipy.stats import spearmanr, kendalltau
 from extrapolation_evaluation import EvaluateAbilityToIdentifyTopTestSamples
@@ -72,7 +72,7 @@ def metrics_evaluation(y_true, y_predict):
 
 
 def performance_standard_approach(all_data, percentage_of_top_samples):
-    sa_model, y_SA = build_ml_model(KNeighborsRegressor(n_jobs=-1), all_data['train_set'], all_data['test_set'])
+    sa_model, y_SA = build_ml_model(LinearRegression(n_jobs=-1), all_data['train_set'], all_data['test_set'])
     y_pred_all = np.array(all_data["y_true"])
     y_pred_all[all_data["test_ids"]] = y_SA
 
@@ -89,11 +89,11 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
 
         train_pairs_for_sign = np.array(train_pairs_batch)
         train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
-        rfc = KNeighborsClassifier(n_jobs=-1)
+        rfc = LogisticRegression(n_jobs=-1, random_state=1, max_iter=1000)
         rfc = build_ml_model(rfc, train_pairs_for_sign)
 
         train_pairs_for_abs = np.absolute(train_pairs_batch)
-        rfr = KNeighborsRegressor(n_jobs=-1)
+        rfr = LinearRegression(n_jobs=-1)
         rfr = build_ml_model(rfr, train_pairs_for_abs)
 
     else:
@@ -125,10 +125,10 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
 
 
 def run_model(data, current_dataset_count, percentage_of_top_samples):
-    temporary_file_dataset_count = int(np.load("tml_temporary_dataset_knn_count_200.npy"))
+    temporary_file_dataset_count = int(np.load("tml_temporary_dataset_lr_count_100.npy"))
 
     if current_dataset_count == temporary_file_dataset_count:
-        existing_iterations = np.load("extrapolation_10fcv_tml_knn_200_temporary.npy")
+        existing_iterations = np.load("extrapolation_10fcv_tml_lr_100_temporary.npy")
         existing_count = len(existing_iterations)
         metrics = list(existing_iterations)
     else:
@@ -143,7 +143,7 @@ def run_model(data, current_dataset_count, percentage_of_top_samples):
         metric_pa, rfc_pa, rfr_pa = performance_pairwise_approach(datum, percentage_of_top_samples)
         metrics.append([metric_sa, metric_pa])
 
-        np.save("tml_temporary_dataset_knn_count_200.npy", [current_dataset_count])
-        np.save("extrapolation_10fcv_tml_knn_200_temporary.npy", np.array(metrics))
+        np.save("tml_temporary_dataset_lr_count_100.npy", [current_dataset_count])
+        np.save("extrapolation_10fcv_tml_lr_100_temporary.npy", np.array(metrics))
 
     return np.array([metrics])

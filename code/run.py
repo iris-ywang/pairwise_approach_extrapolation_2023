@@ -24,12 +24,12 @@ def process_datasets(create_size=100):
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
-    connection = "/input/processed_tml_datasets_200/"
+    connection = "/input/processed_tml_datasets_100/"
     list_of_file_names = os.listdir(os.getcwd() + connection)
     all_metrics = []
 
     try:
-        existing_results = np.load("extrapolation_10fcv_tml_knn_200.npy")
+        existing_results = np.load("extrapolation_10fcv_tml_lr_100.npy")
         existing_count = len(existing_results)
         all_metrics = list(existing_results)
     except:
@@ -38,11 +38,11 @@ if __name__ == '__main__':
         all_metrics = []
 
     try:
-        _ = np.load("tml_temporary_dataset_knn_count_200.npy")
+        _ = np.load("tml_temporary_dataset_lr_count_100.npy")
     except:
-        np.save("tml_temporary_dataset_knn_count_200.npy", [0])
+        np.save("tml_temporary_dataset_lr_count_100.npy", [0])
 
-    with open('dataset_running_order_tml_knn_200.txt', 'a') as f:
+    with open('dataset_running_order_tml_lr_100.txt', 'a') as f:
         f.write("\n"+str(datetime.now().strftime("%d/%m/%Y %H:%M:%S")) + "\n")
 
     count = 0
@@ -58,9 +58,11 @@ if __name__ == '__main__':
             continue
         # TODO: may need to change the way of getting parent directory if this does not work on windows
         filename = list_of_file_names[file]
+        if ".csv" not in filename:
+            continue
         print("On Dataset No.", count, ", ", filename)
 
-        with open('dataset_running_order_tml_knn_200.txt', 'a') as f:
+        with open('dataset_running_order_tml_lr_100.txt', 'a') as f:
             f.write(filename)
 
         train_test = dataset(os.getcwd() + connection + filename, shuffle_state=1)
@@ -71,9 +73,15 @@ if __name__ == '__main__':
 
         print("Running models...")
         start = time.time()
-        metrics = run_model(data, current_dataset_count=count, percentage_of_top_samples=0.1)
+        try:
+            metrics = run_model(data, current_dataset_count=count, percentage_of_top_samples=0.1)
+        except:
+            with open('dataset_running_order_lr.txt', 'a') as f:
+                f.write("WARNING: Cannot build model with only one target value for Dataset " + filename + "\n")
+            print("WARNING: Cannot build model with only one target value for Dataset " + filename)
+            continue
         print(":::Time used: ", time.time() - start, "\n")
 
         all_metrics.append(metrics)
-        np.save("extrapolation_10fcv_tml_knn_200.npy", np.array(all_metrics))
+        np.save("extrapolation_10fcv_tml_lr_100.npy", np.array(all_metrics))
 
