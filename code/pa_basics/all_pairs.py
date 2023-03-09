@@ -96,12 +96,12 @@ class PairingDatasetByPairID:
 
     def parallelised_pairing_process(self, combination_id):
         sample_id_a, sample_id_b = self.permutation_pairs[combination_id]
-        sample_a = self.data[sample_id_a: sample_id_a + 1, :]
-        sample_b = self.data[sample_id_b: sample_id_b + 1, :]
+        sample_a = self.data[sample_id_a, :]
+        sample_b = self.data[sample_id_b, :]
 
-        pair_ab = pair_2samples_discretise(sample_a, sample_b, self.mapping)
+        pair_ab = sample_a - sample_b
 
-        return (sample_id_a, sample_id_b), pair_ab
+        return (sample_id_a, sample_id_b), list(pair_ab) + list(sample_a[1:]) + list(sample_b[1:])
 
 def pair_2samples_discretise(sample_a, sample_b, mapping):
 
@@ -133,6 +133,7 @@ class PairingDataByFeature():
         pair_ab = pair_2samples_discretise(sample_a, sample_b, self.mapping)
 
         return (sample_id_a, sample_id_b), pair_ab
+
 
 def pair_by_pair_id_per_feature(data, pair_ids):
     n_bins_max = 10
