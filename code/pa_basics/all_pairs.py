@@ -64,7 +64,7 @@ def similarity_metrics(fp1, fp2):
     ]
 
 
-def paired_data_by_pair_id(data, pair_ids, mapping, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
+def paired_data_by_pair_id(data, pair_ids, with_similarity=False, with_fp=False, only_fp=False, multiple_tanimoto=False):
     """
     Generate all possible pairs from a QSAR dataset
     :param only_fp: bool - if true, the pairwise features only contains original samples' FP
@@ -76,7 +76,6 @@ def paired_data_by_pair_id(data, pair_ids, mapping, with_similarity=False, with_
 
     pairing_tool = PairingDatasetByPairID(data,
                                           pair_ids,
-                                          mapping,
                                           with_similarity, with_fp, only_fp, multiple_tanimoto)
 
     with multiprocessing.Pool(processes=None) as executor:
@@ -85,9 +84,8 @@ def paired_data_by_pair_id(data, pair_ids, mapping, with_similarity=False, with_
 
 
 class PairingDatasetByPairID:
-    def __init__(self, data, pair_ids, mapping, with_similarity, with_fp, only_fp, multiple_tanimoto):
+    def __init__(self, data, pair_ids, with_similarity, with_fp, only_fp, multiple_tanimoto):
         self.data = data
-        self.mapping = mapping
         self.feature_variation = [with_similarity, with_fp, only_fp, multiple_tanimoto]
 
         self.n_samples, self.n_columns = np.shape(data)
