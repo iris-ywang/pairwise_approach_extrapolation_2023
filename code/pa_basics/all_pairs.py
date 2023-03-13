@@ -134,7 +134,7 @@ class PairingDataByFeature():
 
 
 def pair_by_pair_id_per_feature(data, pair_ids):
-    n_bins_max = 10
+    n_bins_max = 5
     n_samples, n_columns = data.shape
     results_dict = {}
     for pair in pair_ids:
