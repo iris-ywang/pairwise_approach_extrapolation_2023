@@ -152,8 +152,8 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
         Y_pa_c3_true += list(test_pairs_batch[:, 0])
 
     Y_c2_sign_and_abs_predictions = dict(zip(all_data["c2_test_pair_ids"], np.array([Y_pa_c2_dist, Y_pa_c2_sign]).T))
-    y_ranking = rating_trueskill(Y_pa_c2_sign + Y_pa_c3_sign,
-                                 all_data["c3_test_pair_ids"] + all_data["c2_test_pair_ids"],
+    y_ranking = rating_trueskill(list(train_pairs_for_sign[:, 0]) +Y_pa_c2_sign + Y_pa_c3_sign,
+                                 all_data["train_pair_ids"] + all_data["c2_test_pair_ids"] + all_data["c3_test_pair_ids"],
                                  all_data["y_true"])
 
     metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
@@ -162,10 +162,10 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
 
 
 def run_model(data, current_dataset_count, percentage_of_top_samples):
-    temporary_file_dataset_count = int(np.load("extrapolation_temporary_dataset_count_rf_rerun.npy"))
+    temporary_file_dataset_count = int(np.load("extrapolation_temporary_dataset_count_rf_rerun2.npy"))
 
     if current_dataset_count == temporary_file_dataset_count:
-        existing_iterations = np.load("extrapolation_kfold_cv_all_data_temporary_rf_rerun.npy")
+        existing_iterations = np.load("extrapolation_kfold_cv_all_data_temporary_rf_rerun2.npy")
         existing_count = len(existing_iterations)
         metrics = list(existing_iterations)
     else:
@@ -180,7 +180,7 @@ def run_model(data, current_dataset_count, percentage_of_top_samples):
         metric_pa, rfc_pa, rfr_pa = performance_pairwise_approach(datum, percentage_of_top_samples)
         metrics.append([metric_sa, metric_pa])
 
-        np.save("extrapolation_temporary_dataset_count_rf_rerun.npy", [current_dataset_count])
-        np.save("extrapolation_kfold_cv_all_data_temporary_rf_rerun.npy", np.array(metrics))
+        np.save("extrapolation_temporary_dataset_count_rf_rerun2.npy", [current_dataset_count])
+        np.save("extrapolation_kfold_cv_all_data_temporary_rf_rerun2.npy", np.array(metrics))
 
     return np.array([metrics])
