@@ -3,7 +3,6 @@ import numpy as np
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score
 from scipy.stats import spearmanr, kendalltau
-from extrapolation_evaluation import EvaluateAbilityToIdentifyTopTestSamples
 from pa_basics.all_pairs import paired_data_by_pair_id
 from pa_basics.rating import rating_trueskill
 
@@ -77,8 +76,10 @@ def performance_standard_approach(all_data, percentage_of_top_samples):
     y_pred_all = np.array(all_data["y_true"])
     y_pred_all[all_data["test_ids"]] = y_SA
 
-    metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
-                                                      y_pred_all, all_data).run_evaluation()
+    # metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
+    #                                                   y_pred_all, all_data).run_evaluation()
+    metrics = metrics_evaluation(all_data["y_true"], y_pred_all)
+    print(metrics[3])
     return metrics, sa_model
 
 
@@ -151,21 +152,31 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
         Y_pa_c3_sign += list(rfc.predict(test_pairs_batch[:, 1:]))
         Y_pa_c3_true += list(test_pairs_batch[:, 0])
 
-    Y_c2_sign_and_abs_predictions = dict(zip(all_data["c2_test_pair_ids"], np.array([Y_pa_c2_dist, Y_pa_c2_sign]).T))
-    y_ranking = rating_trueskill(Y_pa_c2_sign + Y_pa_c3_sign,
+    # Y_c2_sign_and_abs_predictions = dict(zip(all_data["c2_test_pair_ids"], np.array([Y_pa_c2_dist, Y_pa_c2_sign]).T))
+    y_ranking_c23 = rating_trueskill(Y_pa_c2_sign + Y_pa_c3_sign,
                                  all_data["c3_test_pair_ids"] + all_data["c2_test_pair_ids"],
                                  all_data["y_true"])
+    y_ranking_c2 = rating_trueskill(Y_pa_c2_sign,
+                                 all_data["c2_test_pair_ids"],
+                                 all_data["y_true"])
+    y_ranking_c3 = rating_trueskill(Y_pa_c3_sign,
+                                 all_data["c3_test_pair_ids"],
+                                 all_data["y_true"])
 
-    metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
-                                                      y_ranking, all_data).run_evaluation(Y_c2_sign_and_abs_predictions)
-    return metrics, rfc, rfr
+    # metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
+    #                                                   y_ranking, all_data).run_evaluation(Y_c2_sign_and_abs_predictions)
+    metrics_c23 = metrics_evaluation(all_data["y_true"], y_ranking_c23)
+    metrics_c2 = metrics_evaluation(all_data["y_true"], y_ranking_c2)
+    metrics_c3 = metrics_evaluation(all_data["y_true"], y_ranking_c3)
+    print("PA: %s, %s, %s" %(metrics_c23[3], metrics_c23[3], metrics_c23[3]))
+    return metrics_c23, metrics_c2, metrics_c3
 
 
 def run_model(data, current_dataset_count, percentage_of_top_samples):
-    temporary_file_dataset_count = int(np.load("extrapolation_temporary_dataset_count_rf_rerun.npy"))
+    temporary_file_dataset_count = int(np.load("extrapolation_temporary_dataset_count_rf_ranking.npy"))
 
     if current_dataset_count == temporary_file_dataset_count:
-        existing_iterations = np.load("extrapolation_kfold_cv_all_data_temporary_rf_rerun.npy")
+        existing_iterations = np.load("extrapolation_kfold_cv_all_data_temporary_rf_ranking.npy")
         existing_count = len(existing_iterations)
         metrics = list(existing_iterations)
     else:
@@ -177,10 +188,10 @@ def run_model(data, current_dataset_count, percentage_of_top_samples):
         count += 1
         if count <= existing_count: continue
         metric_sa, rfr_sa = performance_standard_approach(datum, percentage_of_top_samples)
-        metric_pa, rfc_pa, rfr_pa = performance_pairwise_approach(datum, percentage_of_top_samples)
-        metrics.append([metric_sa, metric_pa])
+        metric_pa_c23, metric_pa_c2, metric_pa_c3 = performance_pairwise_approach(datum, percentage_of_top_samples)
+        metrics.append([metric_sa, metric_pa_c23, metric_pa_c2, metric_pa_c3])
 
-        np.save("extrapolation_temporary_dataset_count_rf_rerun.npy", [current_dataset_count])
-        np.save("extrapolation_kfold_cv_all_data_temporary_rf_rerun.npy", np.array(metrics))
+        np.save("extrapolation_temporary_dataset_count_rf_ranking.npy", [current_dataset_count])
+        np.save("extrapolation_kfold_cv_all_data_temporary_rf_ranking.npy", np.array(metrics))
 
     return np.array([metrics])
