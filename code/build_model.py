@@ -154,7 +154,7 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
 
     # Y_c2_sign_and_abs_predictions = dict(zip(all_data["c2_test_pair_ids"], np.array([Y_pa_c2_dist, Y_pa_c2_sign]).T))
     y_ranking_c23 = rating_trueskill(Y_pa_c2_sign + Y_pa_c3_sign,
-                                 all_data["c3_test_pair_ids"] + all_data["c2_test_pair_ids"],
+                                 all_data["c2_test_pair_ids"] + all_data["c3_test_pair_ids"],
                                  all_data["y_true"])
     y_ranking_c2 = rating_trueskill(Y_pa_c2_sign,
                                  all_data["c2_test_pair_ids"],
@@ -162,14 +162,18 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
     y_ranking_c3 = rating_trueskill(Y_pa_c3_sign,
                                  all_data["c3_test_pair_ids"],
                                  all_data["y_true"])
-
+    y_ranking_c1 = rating_trueskill(list(train_pairs_for_sign[:,0]) + Y_pa_c2_sign + Y_pa_c3_sign,
+                                    all_data["train_pair_ids"] + all_data["c2_test_pair_ids"] + all_data["c3_test_pair_ids"],
+                                    all_data["y_true"])
+                                    
     # metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
     #                                                   y_ranking, all_data).run_evaluation(Y_c2_sign_and_abs_predictions)
     metrics_c23 = metrics_evaluation(all_data["y_true"], y_ranking_c23)
     metrics_c2 = metrics_evaluation(all_data["y_true"], y_ranking_c2)
     metrics_c3 = metrics_evaluation(all_data["y_true"], y_ranking_c3)
-    print("PA: %s, %s, %s" %(metrics_c23[3], metrics_c23[3], metrics_c23[3]))
-    return metrics_c23, metrics_c2, metrics_c3
+    metrics_c123 = metrics_evaluation(all_data["y_true"], y_ranking_c1)
+    print("c23-%s, c2-%s, c3-%s, c123-%s" %(metrics_c23[3], metrics_c2[3], metrics_c3[3], metrics_c123[3]))
+    return metrics_c23, metrics_c2, metrics_c3, metrics_c123
 
 
 def run_model(data, current_dataset_count, percentage_of_top_samples):
@@ -188,8 +192,8 @@ def run_model(data, current_dataset_count, percentage_of_top_samples):
         count += 1
         if count <= existing_count: continue
         metric_sa, rfr_sa = performance_standard_approach(datum, percentage_of_top_samples)
-        metric_pa_c23, metric_pa_c2, metric_pa_c3 = performance_pairwise_approach(datum, percentage_of_top_samples)
-        metrics.append([metric_sa, metric_pa_c23, metric_pa_c2, metric_pa_c3])
+        metric_pa_c23, metric_pa_c2, metric_pa_c3, metrics_pa_c123 = performance_pairwise_approach(datum, percentage_of_top_samples)
+        metrics.append([metric_sa, metric_pa_c23, metric_pa_c2, metric_pa_c3, metrics_pa_c123])
 
         np.save("extrapolation_temporary_dataset_count_rf_ranking.npy", [current_dataset_count])
         np.save("extrapolation_kfold_cv_all_data_temporary_rf_ranking.npy", np.array(metrics))
