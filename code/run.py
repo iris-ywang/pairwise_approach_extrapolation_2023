@@ -29,7 +29,7 @@ if __name__ == '__main__':
     all_metrics = []
 
     try:
-        existing_results = np.load("extrapolation_10fcv_tml_lr_100.npy")
+        existing_results = np.load("extrapolation_10fcv_tml_ridge_100.npy")
         existing_count = len(existing_results)
         all_metrics = list(existing_results)
     except:
@@ -38,11 +38,11 @@ if __name__ == '__main__':
         all_metrics = []
 
     try:
-        _ = np.load("tml_temporary_dataset_lr_count_100.npy")
+        _ = np.load("tml_temporary_dataset_ridge_count_100.npy")
     except:
-        np.save("tml_temporary_dataset_lr_count_100.npy", [0])
+        np.save("tml_temporary_dataset_ridge_count_100.npy", [0])
 
-    with open('dataset_running_order_tml_lr_100.txt', 'a') as f:
+    with open('dataset_running_order_tml_ridge_100.txt', 'a') as f:
         f.write("\n"+str(datetime.now().strftime("%d/%m/%Y %H:%M:%S")) + "\n")
 
     count = 0
@@ -62,7 +62,7 @@ if __name__ == '__main__':
             continue
         print("On Dataset No.", count, ", ", filename)
 
-        with open('dataset_running_order_tml_lr_100.txt', 'a') as f:
+        with open('dataset_running_order_tml_ridge_100.txt', 'a') as f:
             f.write(filename)
 
         train_test = dataset(os.getcwd() + connection + filename, shuffle_state=1)
@@ -76,12 +76,12 @@ if __name__ == '__main__':
         try:
             metrics = run_model(data, current_dataset_count=count, percentage_of_top_samples=0.1)
         except:
-            with open('dataset_running_order_tml_lr_100.txt', 'a') as f:
+            with open('dataset_running_order_tml_ridge_100.txt', 'a') as f:
                 f.write("WARNING: Cannot build model with only one target value for Dataset " + filename + "\n")
             print("WARNING: Cannot build model with only one target value for Dataset " + filename)
             continue
         print(":::Time used: ", time.time() - start, "\n")
 
         all_metrics.append(metrics)
-        np.save("extrapolation_10fcv_tml_lr_100.npy", np.array(all_metrics))
+        np.save("extrapolation_10fcv_tml_ridge_100.npy", np.array(all_metrics))
 
