@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 from sklearn.linear_model import Lasso
-from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.linear_model import Ridge, RidgeClassifier
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score
 from scipy.stats import spearmanr, kendalltau
 from extrapolation_evaluation import EvaluateAbilityToIdentifyTopTestSamples
@@ -74,7 +74,7 @@ def metrics_evaluation(y_true, y_predict):
 
 
 def performance_standard_approach(all_data, percentage_of_top_samples):
-    sa_model, y_SA = build_ml_model(LinearRegression(n_jobs=-1), all_data['train_set'], all_data['test_set'])
+    sa_model, y_SA = build_ml_model(Ridge(random_state=1), all_data['train_set'], all_data['test_set'])
     y_pred_all = np.array(all_data["y_true"])
     y_pred_all[all_data["test_ids"]] = y_SA
 
@@ -91,35 +91,16 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
 
         train_pairs_for_sign = np.array(train_pairs_batch)
         train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
-        rfc = LogisticRegression(n_jobs=-1, random_state=1, max_iter=1000)
+        rfc = RidgeClassifier(random_state=1)
         rfc = build_ml_model(rfc, train_pairs_for_sign)
 
         train_pairs_for_abs = np.absolute(train_pairs_batch)
-        rfr = LinearRegression(n_jobs=-1)
+        rfr = Ridge(random_state=1)
         rfr = build_ml_model(rfr, train_pairs_for_abs)
 
     else:
 
-        for run in range(runs_of_estimators + 1):
-            if run < runs_of_estimators:
-                train_ids_per_batch = all_data["train_pair_ids"][run*batch_size:(run + 1) * batch_size]
-
-            else:
-                train_ids_per_batch = all_data["train_pair_ids"][run*batch_size:]
-
-            train_pairs_batch = paired_data_by_pair_id(all_data["train_test"], train_ids_per_batch)
-
-            train_pairs_for_sign = np.array(train_pairs_batch)
-            train_pairs_for_sign[:, 0] = np.sign(train_pairs_for_sign[:, 0])
-            rfc = LogisticRegression(n_jobs=-1, random_state=1, warm_start=True, max_iter=1000)
-            rfc = build_ml_model(rfc, train_pairs_for_sign)
-
-            train_pairs_for_abs = np.absolute(train_pairs_batch)
-            rfr = LinearRegression(n_jobs=-1)
-            rfr = build_ml_model(rfr, train_pairs_for_abs)
-
-            rfc.n_estimators += 100
-            rfr.n_estimators += 100
+        raise Exception("Dataset size too large")
 
     c2_test_pair_ids = all_data["c2_test_pair_ids"]
     number_test_batches = len(c2_test_pair_ids) // batch_size
@@ -146,10 +127,10 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
 
 
 def run_model(data, current_dataset_count, percentage_of_top_samples):
-    temporary_file_dataset_count = int(np.load("extrapolation_temporary_dataset_count_lr.npy"))
+    temporary_file_dataset_count = int(np.load("extrapolation_temporary_dataset_count_ridge.npy"))
 
     if current_dataset_count == temporary_file_dataset_count:
-        existing_iterations = np.load("extrapolation_kfold_cv_all_data_temporary_lr.npy")
+        existing_iterations = np.load("extrapolation_kfold_cv_all_data_temporary_ridge.npy")
         existing_count = len(existing_iterations)
         metrics = list(existing_iterations)
     else:
@@ -164,7 +145,7 @@ def run_model(data, current_dataset_count, percentage_of_top_samples):
         metric_pa, rfc_pa, rfr_pa = performance_pairwise_approach(datum, percentage_of_top_samples)
         metrics.append([metric_sa, metric_pa])
 
-        np.save("extrapolation_temporary_dataset_count_lr.npy", [current_dataset_count])
-        np.save("extrapolation_kfold_cv_all_data_temporary_lr.npy", np.array(metrics))
+        np.save("extrapolation_temporary_dataset_count_ridge.npy", [current_dataset_count])
+        np.save("extrapolation_kfold_cv_all_data_temporary_ridge.npy", np.array(metrics))
 
     return np.array([metrics])
