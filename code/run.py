@@ -30,13 +30,13 @@ def load_datasets():
 
 
 def run_datasets_in_parallel(file):
-    chembl_info = pd.read_csv("input//chembl_svm_remaining.csv").sort_values(by=["N(sample)"])
+    chembl_info = pd.read_csv("input//chembl_datasets_info.csv").sort_values(by=["N(sample)"])
     file_count = file + 1
     # TODO: may need to change the way of getting parent directory if this does not work on windows
     filename = chembl_info.iloc[file]["File name"]
     print("On Dataset No.", file_count, ", ", filename)
 
-    with open(os.getcwd() + "/extrapolation_svm/"+'dataset_svm_running_order.txt', 'a') as f:
+    with open(os.getcwd() + "/extrapolation_xgb_chembl/"+'dataset_xgb_chembl_running_order.txt', 'a') as f:
         f.write("Running Dataset No."+str(file_count)+filename + "\n")
 
     connection = "/input/qsar_data_unsorted/"
@@ -51,8 +51,8 @@ def run_datasets_in_parallel(file):
     metrics = run_model(data, current_filename=filename, percentage_of_top_samples=0.1)
     print(":::Time used: ", time.time() - start, "\n")
 
-    np.save(os.getcwd() + "/extrapolation_svm/" + "extrapolation_svm_kfold_cv_all_data_hpc_"+str(filename)+".npy", metrics)
-    with open('dataset_svm_running_order.txt', 'a') as f:
+    np.save(os.getcwd() + "/extrapolation_xgb_chembl/" + "extrapolation_xgb_chembl_kfold_cv_all_data_hpc_"+str(filename)+".npy", metrics)
+    with open('dataset_xgb_chembl_running_order.txt', 'a') as f:
         f.write("\n"+"Finished Dataset No."+str(file_count)+filename + "\n")
 
 
@@ -61,7 +61,7 @@ def count_finished_datasets(sorted_chembl_info):
     for file in range(len(sorted_chembl_info)):
         filename = sorted_chembl_info.iloc[file]["File name"]
         try:
-            _ = np.load(os.getcwd() + "/extrapolation_svm/" + "extrapolation_svm_kfold_cv_all_data_hpc_"+str(filename)+".npy")
+            _ = np.load(os.getcwd() + "/extrapolation_xgb_chembl/" + "extrapolation_xgb_chembl_kfold_cv_all_data_hpc_"+str(filename)+".npy")
             existing_count += 1
         except FileNotFoundError:
             return existing_count
@@ -70,7 +70,7 @@ def count_finished_datasets(sorted_chembl_info):
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
 
-    chembl_info = pd.read_csv("input//chembl_svm_remaining.csv").sort_values(by=["N(sample)"])
+    chembl_info = pd.read_csv("input//chembl_datasets_info.csv").sort_values(by=["N(sample)"])
     existing_count = count_finished_datasets(chembl_info)
 
     with multiprocessing.Pool() as executor:
