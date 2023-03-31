@@ -1,7 +1,8 @@
 import numpy as np
 
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, ndcg_score, \
+    accuracy_score, f1_score, precision_score
 from scipy.stats import spearmanr, kendalltau
 from extrapolation_evaluation import EvaluateAbilityToIdentifyTopTestSamples
 from pa_basics.all_pairs import paired_data_by_pair_id
@@ -72,18 +73,37 @@ def metrics_evaluation(y_true, y_predict):
     return [mse, mae, r2, rho, ndcg, tau]
 
 
-def performance_standard_approach(all_data, percentage_of_top_samples):
+def performance_standard_approach(all_data):
     '''Run the standard regression, evaluated by extrapolation metrics.'''
     sa_model, y_SA = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), all_data['train_set'], all_data['test_set'])
     y_pred_all = np.array(all_data["y_true"])
     y_pred_all[all_data["test_ids"]] = y_SA
+    metrics_c2 = pairwise_differences_for_standard_approach(all_data, "c2", y_pred_all)
+    metrics_c3 = pairwise_differences_for_standard_approach(all_data, "c3", y_pred_all)
+    return metrics_c2, metrics_c3
 
-    metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
-                                                      y_pred_all, all_data).run_evaluation()
-    return metrics, sa_model
+def classification_evaluation(y_true, y_pred):
+    acc = accuracy_score(np.sign(y_true), np.sign(y_pred))
+    prec = precision_score(np.sign(y_true), np.sign(y_pred), average="macro", zero_division=0)
+    cm = f1_score(np.sign(y_true), np.sign(y_pred), average='macro', zero_division=0)
+    return [acc, prec, cm]
+
+def pairwise_differences_for_standard_approach(all_data, type: str, y_pred_all):
+    Y_true, Y_pred = [], []
+    if type == "c2":
+        combs = all_data["c2_test_pair_ids"]
+    elif type == "c3":
+        combs = all_data["c3_test_pair_ids"]
+
+    for comb in combs:
+        a, b = comb
+        Y_true.append(np.sign(all_data['y_true'][a] - all_data['y_true'][b]))
+        Y_pred.append(np.sign(y_pred_all[a] - y_pred_all[b]))
+    metrics = classification_evaluation(Y_true, Y_pred)
+    return metrics
 
 
-def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_size=200000):
+def performance_pairwise_approach(all_data, batch_size=200000):
     '''Run the pairwise approach, evaluated by extrapolation metrics.'''
     runs_of_estimators = len(all_data["train_pair_ids"]) // batch_size
 
@@ -153,22 +173,18 @@ def performance_pairwise_approach(all_data, percentage_of_top_samples, batch_siz
         Y_pa_c3_sign += list(rfc.predict(test_pairs_batch[:, 1:]))
         Y_pa_c3_true += list(test_pairs_batch[:, 0])
 
-    Y_c2_sign_and_abs_predictions = dict(zip(all_data["c2_test_pair_ids"], np.array([Y_pa_c2_dist, Y_pa_c2_sign]).T))
-    y_ranking = rating_trueskill(list(train_pairs_for_sign[:, 0]) +Y_pa_c2_sign + Y_pa_c3_sign,
-                                 all_data["train_pair_ids"] + all_data["c2_test_pair_ids"] + all_data["c3_test_pair_ids"],
-                                 all_data["y_true"])
+    metrics_c2 = classification_evaluation(Y_pa_c2_sign, np.sign(Y_pa_c2_true))
+    metrics_c3 = classification_evaluation(Y_pa_c3_sign, np.sign(Y_pa_c3_true))
 
-    metrics = EvaluateAbilityToIdentifyTopTestSamples(percentage_of_top_samples, all_data["y_true"],
-                                                      y_ranking, all_data).run_evaluation(Y_c2_sign_and_abs_predictions)
-    return metrics, rfc, rfr
+    return metrics_c2, metrics_c3
 
 
-def run_model(data, current_dataset_count, percentage_of_top_samples):
-    temporary_file_dataset_count = int(np.load("temporary_dataset_count_rf.npy"))
+def run_model(data, current_dataset_count):
+    temporary_file_dataset_count = int(np.load("temporary_dataset_count_rf_sign_acccuracy.npy"))
 
     # Continue from the last run of 10-fold CV.
     if current_dataset_count == temporary_file_dataset_count:
-        existing_iterations = np.load("extrapolation_10fold_cv_chembl_rf_temporary.npy")
+        existing_iterations = np.load("10fold_cv_chembl_rf_sign_acccuracy_temporary.npy")
         existing_count = len(existing_iterations)
         metrics = list(existing_iterations)
     else:
@@ -179,11 +195,9 @@ def run_model(data, current_dataset_count, percentage_of_top_samples):
     for outer_fold, datum in data.items():
         count += 1
         if count <= existing_count: continue
-        metric_sa, rfr_sa = performance_standard_approach(datum, percentage_of_top_samples)
-        metric_pa, rfc_pa, rfr_pa = performance_pairwise_approach(datum, percentage_of_top_samples)
-        metrics.append([metric_sa, metric_pa])
-
-        np.save("temporary_dataset_count_rf.npy", [current_dataset_count])
-        np.save("extrapolation_10fold_cv_chembl_rf_temporary.npy", np.array(metrics))
-
+        metric_sa_c2, metric_sa_c3 = performance_standard_approach(datum)
+        metric_pa_c2, metric_pa_c3 = performance_pairwise_approach(datum)
+        metrics.append([metric_sa_c2, metric_pa_c2, metric_sa_c3, metric_pa_c3])
+        np.save("temporary_dataset_count_rf_sign_acccuracy.npy", [current_dataset_count])
+        np.save("10fold_cv_chembl_rf_sign_acccuracy.npy", np.array(metrics))
     return np.array([metrics])
