@@ -12,11 +12,11 @@ from build_model import run_model
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
     chembl_info = pd.read_csv("input//chembl_datasets_info.csv").sort_values(by=["N(sample)"])
-    log_file_name = 'dataset_running_order_rf_sign_acccuracy.txt'
+    log_file_name = 'dataset_running_order_rf_sign_accuracy2.txt'
 
     # For re-running purpose:
     try:
-        existing_results = np.load("10fold_cv_chembl_rf_sign_acccuracy.npy")
+        existing_results = np.load("10fold_cv_chembl_rf_sign_accuracy2.npy")
         existing_count = len(existing_results)
         all_metrics = list(existing_results)
     except:
@@ -25,9 +25,9 @@ if __name__ == '__main__':
         all_metrics = []
 
     try:
-        _ = np.load("temporary_dataset_count_rf_sign_acccuracy.npy")
+        _ = np.load("temporary_dataset_count_rf_sign_accuracy2.npy")
     except:
-        np.save("temporary_dataset_count_rf_sign_acccuracy.npy", [0])
+        np.save("temporary_dataset_count_rf_sign_accuracy2.npy", [0])
 
     count = 0
     for file in range(len(chembl_info)):
@@ -63,5 +63,5 @@ if __name__ == '__main__':
         m = np.nanmean(metrics, axis=(0, 1))
         print("metrics:")
         print(m)
-        np.save("10fold_cv_chembl_rf_sign_acccuracy.npy", np.array(all_metrics))
+        np.save("10fold_cv_chembl_rf_sign_accuracy2.npy", np.array(all_metrics))
 

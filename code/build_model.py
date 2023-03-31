@@ -78,9 +78,11 @@ def performance_standard_approach(all_data):
     sa_model, y_SA = build_ml_model(RandomForestRegressor(n_jobs=-1, random_state=1), all_data['train_set'], all_data['test_set'])
     y_pred_all = np.array(all_data["y_true"])
     y_pred_all[all_data["test_ids"]] = y_SA
-    metrics_c2 = pairwise_differences_for_standard_approach(all_data, "c2", y_pred_all)
-    metrics_c3 = pairwise_differences_for_standard_approach(all_data, "c3", y_pred_all)
-    return metrics_c2, metrics_c3
+    Y_c2_true, Y_c2_pred, metrics_c2 = pairwise_differences_for_standard_approach(all_data, "c2", y_pred_all)
+    _, _, metrics_c3 = pairwise_differences_for_standard_approach(all_data, "c3", y_pred_all)
+    y = rating_trueskill(Y_c2_pred, all_data["c2_test_pair_ids"], all_data['y_true'])
+    s = spearmanr(all_data['y_true'], y)[0]
+    return metrics_c2, metrics_c3, s
 
 def classification_evaluation(y_true, y_pred):
     acc = accuracy_score(np.sign(y_true), np.sign(y_pred))
@@ -100,7 +102,7 @@ def pairwise_differences_for_standard_approach(all_data, type: str, y_pred_all):
         Y_true.append(np.sign(all_data['y_true'][a] - all_data['y_true'][b]))
         Y_pred.append(np.sign(y_pred_all[a] - y_pred_all[b]))
     metrics = classification_evaluation(Y_true, Y_pred)
-    return metrics
+    return Y_true, Y_pred, metrics
 
 
 def performance_pairwise_approach(all_data, batch_size=200000):
@@ -175,16 +177,17 @@ def performance_pairwise_approach(all_data, batch_size=200000):
 
     metrics_c2 = classification_evaluation(Y_pa_c2_sign, np.sign(Y_pa_c2_true))
     metrics_c3 = classification_evaluation(Y_pa_c3_sign, np.sign(Y_pa_c3_true))
-
-    return metrics_c2, metrics_c3
+    y = rating_trueskill(Y_pa_c2_sign, all_data["c2_test_pair_ids"], all_data['y_true'])
+    s = spearmanr(all_data['y_true'], y)[0]
+    return metrics_c2, metrics_c3, s
 
 
 def run_model(data, current_dataset_count):
-    temporary_file_dataset_count = int(np.load("temporary_dataset_count_rf_sign_acccuracy.npy"))
+    temporary_file_dataset_count = int(np.load("temporary_dataset_count_rf_sign_accuracy2.npy"))
 
     # Continue from the last run of 10-fold CV.
     if current_dataset_count == temporary_file_dataset_count:
-        existing_iterations = np.load("10fold_cv_chembl_rf_sign_acccuracy_temporary.npy")
+        existing_iterations = np.load("10fold_cv_chembl_rf_sign_accuracy2_temporary.npy")
         existing_count = len(existing_iterations)
         metrics = list(existing_iterations)
     else:
@@ -195,9 +198,9 @@ def run_model(data, current_dataset_count):
     for outer_fold, datum in data.items():
         count += 1
         if count <= existing_count: continue
-        metric_sa_c2, metric_sa_c3 = performance_standard_approach(datum)
-        metric_pa_c2, metric_pa_c3 = performance_pairwise_approach(datum)
-        metrics.append([metric_sa_c2, metric_pa_c2, metric_sa_c3, metric_pa_c3])
-        np.save("temporary_dataset_count_rf_sign_acccuracy.npy", [current_dataset_count])
-        np.save("10fold_cv_chembl_rf_sign_acccuracy_temporary.npy", np.array(metrics))
+        metric_sa_c2, metric_sa_c3, ssa = performance_standard_approach(datum)
+        metric_pa_c2, metric_pa_c3, spa = performance_pairwise_approach(datum)
+        metrics.append([metric_sa_c2 + [ssa], metric_pa_c2 + [spa], metric_sa_c3 + [0], metric_pa_c3 + [0]])
+        np.save("temporary_dataset_count_rf_sign_accuracy2.npy", [current_dataset_count])
+        np.save("10fold_cv_chembl_rf_sign_accuracy2_temporary.npy", np.array(metrics))
     return np.array([metrics])
