@@ -199,5 +199,5 @@ def run_model(data, current_dataset_count):
         metric_pa_c2, metric_pa_c3 = performance_pairwise_approach(datum)
         metrics.append([metric_sa_c2, metric_pa_c2, metric_sa_c3, metric_pa_c3])
         np.save("temporary_dataset_count_rf_sign_acccuracy.npy", [current_dataset_count])
-        np.save("10fold_cv_chembl_rf_sign_acccuracy.npy", np.array(metrics))
+        np.save("10fold_cv_chembl_rf_sign_acccuracy_temporary.npy", np.array(metrics))
     return np.array([metrics])
