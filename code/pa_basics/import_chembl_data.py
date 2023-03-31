@@ -7,7 +7,8 @@ import numpy as np
 from sklearn.utils import shuffle
 
 
-def dataset(filename, shuffle_state=None):
+def dataset(filename: str, shuffle_state=None):
+    '''Basic filtering of features.'''
     orig_data = import_data(filename, shuffle_state)
     filter1 = uniform_features(orig_data)
     filter2 = duplicated_features(filter1)
